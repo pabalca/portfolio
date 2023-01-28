@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}Register user{% endblock %}
+
+{% block content %}
+
+<h4>Welcome to the app</h4>
+<hr>
+<ul>
+<li>
+Download <a href="https://apps.apple.com/us/app/google-authenticator/id388497605">Google Authenticator</a> from the Appstore
+</li>
+<li>Click Generate</li>
+<li>Open the app and scan the QR code</li>
+<li>Save the secret offline as backup</li>
+</ul>
+
+<center>
+{% if qr %}
+<div id="qrcode"></div><br>
+<pre>{{ secret }}</pre>
+<pre><a href="{{ qr }}">save secret</a></pre>
+{% endif %}
+</center>
+
+<form method="post">
+  {{ form.hidden_tag() }}
+  <div class="form-row align-items-center">
+    <div class="col-auto">{{ form['submit'](class='btn btn-success mb-2') }}</div>
+  </div>
+</form>
+
+<script type="text/javascript">
+new QRCode(document.getElementById("qrcode"), "{{ qr }}");
+</script>
+
+{% endblock %}

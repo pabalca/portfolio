@@ -1,0 +1,263 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+{% if assets %}
+
+  <div class="row d-flex justify-content-center">
+    <div class="">
+      <table class="table table-hover table-sm table-bordered">
+        <thead>
+          <tr>
+            <th scope="col"></th>
+            <th scope="col" class="text-center">Price</th>
+            <th scope="col" class="text-center">&Delta;%</th>
+            <th scope="col" class="text-center">PnL</th>
+            <th scope="col" class="text-center">&euro;</th>
+            <th scope="col" class="text-center">#</th>
+            <th scope="col" class="text-center">%</th>
+            <th scope="col" class="text-center">Target</th>
+            <th scope="col" class="text-center">&Delta;&euro;</th>
+            <th scope="col" class="text-center">&Delta;#</th>
+         </tr>
+        </thead>
+        <tbody>
+          {% for item in assets %}
+          <tr>
+            <th scope="row">{{ item.ticker.description}}</th>
+            <td class="text-right">{{ '{0:0.2f}'.format(item.ticker.price) }}</td>
+            <td class="text-right">{{ '{0:0.2f}'.format(item.ticker.price_change) }}</td>
+            <td class="text-right">{{ '{0:0.2f}'.format(item.pnl) }}</td>
+            <td class="text-right">{{ '{0:0.2f}'.format(item.value)}}</td>
+            <td class="text-right">{{ '{0:0.2f}'.format(item.shares) }}</td>
+            <td class="text-right">{{ '{0:0.2f}'.format(100*item.percentage)}}</td>
+            <td class="text-right">{{ '{0:0.2f}'.format(item.target)}}</td>
+            <td class="text-right">{{ '{0:0.0f}'.format(portfolio.value*item.target/100-item.value)}}</td>
+            <td class="text-right">{{ '{0:0.2f}'.format((portfolio.value*item.target/100-item.value)/item.ticker.price)}}</td>
+          </tr>
+          {% endfor %}
+          <tr>
+            <th scope="row">TOTAL</th>
+            <td class="text-right"></td>
+            <td class="text-right">{{ '{0:0.2f}'.format(portfolio["change"])  }}</td>
+            <td class="text-right">{{ '{0:0.2f}'.format(portfolio["pnl"])  }}</td>
+            <td class="text-right">{{ '{0:0.2f}'.format(portfolio["value"])  }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <hr>
+
+  <div class="row d-flex justify-content-center">
+    <div class="col-sm-6">
+      <canvas id="sectorsChart" width="500" height="500"></canvas>
+    </div>
+    <div class="col-sm-6">
+      <canvas id="assetsChart" width="500" height="500"></canvas>
+    </div>
+  </div>
+
+  <hr>
+  
+  <div class="row">
+    <canvas id="statsChart" width="600" height="300"></canvas>
+  </div>
+{% else %}
+<p>There are still no assets in your portfolio.</p>
+<a class="btn btn-info mb-2" href="{{ url_for('asset') }}" role="button">Add asset</a>
+{% endif %}
+
+
+{% endblock %}
+
+{% block scripts %}
+  const ctx = document.getElementById('assetsChart');
+
+  new Chart(ctx, {
+    type: 'pie',
+    plugins: [ChartDataLabels],
+    data: {
+      labels: [
+          {% for item in assets %}
+              "{{item.ticker.description}}",
+          {% endfor %},
+      ],
+      datasets: [
+      {
+        label: ' value: ',
+        data: [
+            {% for item in assets %}
+                "{{'{0:0.0f}'.format(item.value)}}",
+            {% endfor %},
+
+        ],
+      },
+      ]
+    },
+    options: {
+      responsive: true,
+      animation: {
+        duration: 0
+      },
+      plugins: {
+        legend: {
+          position: 'right',
+        },
+        title: {
+          display: true,
+          text: 'Portfolio allocation',
+          align: 'start'
+        },
+        tooltip: {
+          enabled: true,
+        },
+        datalabels: {
+           formatter: function(value, context) {
+             var hiddens = context.chart._hiddenIndices;
+             var total = 0;
+             var datapoints = context.dataset.data;
+             datapoints.forEach((val, i) => {
+               if (hiddens[i] != undefined) {
+                 if (!hiddens[i]) {
+                   total += parseInt(val);
+                 }
+               } else {
+                 total += parseInt(val);
+               }
+             });
+
+             var percentage = (value / total * 100).toFixed(0) + "%";
+             if (percentage != "NaN%") { // weird bug
+               return percentage
+             }
+          },
+          color: '#000',
+          display: 'auto',
+          anchor: 'center',
+          align: 'center',
+        }
+      }
+    }
+  });
+
+  const ctx2 = document.getElementById('statsChart');
+
+  new Chart(ctx2, {
+    type: 'line',
+    data: {
+      labels: [
+          {% for item in stats %}
+              "{{item.created_at.strftime("%m/%d/%Y %H:%M")}}",
+          {% endfor %},
+      ],
+      datasets: [
+      {
+        label: ' value: ',
+        data: [
+            {% for item in stats %}
+                "{{'{0:0.0f}'.format(item.value)}}",
+            {% endfor %},
+
+        ],
+      },
+      ]
+    },
+    options: {
+      responsive: true,
+      animation: {
+        duration: 0
+      },
+      plugins: {
+        legend: {
+          display: false,
+          position: 'bottom',
+        },
+        title: {
+          display: true,
+          text: 'Performance'
+        },
+        tooltip: {
+          enabled: true,
+        },
+      }
+    }
+  });
+
+  const ctx3 = document.getElementById('sectorsChart');
+
+  new Chart(ctx3, {
+    type: 'pie',
+    plugins: [ChartDataLabels],
+    data: {
+      labels: [
+          {% for item in sectors %}
+              "{{item.sector}}",
+          {% endfor %},
+      ],
+      datasets: [
+      {
+        label: ' value: ',
+        data: [
+            {% for item in sectors %}
+                "{{'{0:0.0f}'.format(item.value)}}",
+            {% endfor %},
+
+        ],
+      },
+      ]
+    },
+    options: {
+      responsive: true,
+      animation: {
+        duration: 0
+      },
+      plugins: {
+        legend: {
+          position: 'right',
+        },
+        title: {
+          display: true,
+          text: 'Sectors',
+          align: 'start'
+        },
+        tooltip: {
+          enabled: true,
+        },
+        datalabels: {
+           formatter: function(value, context) {
+             var hiddens = context.chart._hiddenIndices;
+             var total = 0;
+             var datapoints = context.dataset.data;
+             datapoints.forEach((val, i) => {
+               if (hiddens[i] != undefined) {
+                 if (!hiddens[i]) {
+                   total += parseInt(val);
+                 }
+               } else {
+                 total += parseInt(val);
+               }
+             });
+
+             var percentage = (value / total * 100).toFixed(0) + "%";
+             if (percentage != "NaN%") { // weird bug
+               return percentage
+             }
+          },
+          color: '#000',
+          display: 'auto',
+          anchor: 'center',
+          align: 'center',
+        }
+      }
+    }
+  });
+
+function updatePrices () {
+    const res = fetch("{{ url_for('scrape') }}");
+}
+
+var interval = setInterval(function () { updatePrices(); }, 600000);
+{% endblock %}

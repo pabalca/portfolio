@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h4>Assets</h4>
+<hr>
+<form method="post">
+  {{ form.hidden_tag() }}
+  <div class="form-row align-items-center">
+    <div class="col-2">{{ form['shares'](class='form-control mb-2', placeholder="# shares") }}</div>
+    <div class="col-3">{{ form['ticker'](class='form-control mb-2', placeholder="price") }}</div>
+    <div class="col-3">{{ form['sector'](class='form-control mb-2', placeholder="sector") }}</div>
+    <div class="col-2">{{ form['target'](class='form-control mb-2', placeholder="target") }}</div>
+    <div class="col-2">{{ form['submit'](class='btn btn-success mb-2') }}</div>
+  </div>
+</form>
+<hr>
+
+{% if assets %}
+
+<div class="list-group">
+  {% for asset in assets %}
+  <a href="{{ url_for('edit_asset', asset_id=asset.id) }}" class="list-group-item list-group-item-action flex-column align-items-start">
+    <div class="d-flex w-100 justify-content-between">
+      <h5 class="mb-1">{{ asset.ticker.description }}</h5>
+      <small>{{ asset.sector }}</small>
+    </div>
+
+    <small><p class="mb-1">Shares: {{ asset.shares }}</p></small>
+    <small><p class="mb-1">Value: {{ '{0:0.0f}'.format(asset.value) }} &euro;</p></small>
+    <small><p class="mb-1">Target: {{ '{0:0.2f}'.format(asset.target) }}%</p></small>
+    <small><p class="mb-1">Percentage: {{ '{0:0.2f}'.format(100*asset.percentage) }}%</p></small>
+  {% endfor %}
+  </a>
+</div>
+{% endif %}
+
+{% endblock %}

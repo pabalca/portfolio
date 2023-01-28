@@ -1,0 +1,7 @@
+Flask
+Flask-WTF
+Flask-SQLAlchemy
+gunicorn
+requests
+yfinance
+pyotp
