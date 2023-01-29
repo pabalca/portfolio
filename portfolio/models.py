@@ -5,7 +5,6 @@ import pyotp
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.associationproxy import association_proxy
-
 from sqlalchemy.sql import case
 
 
@@ -109,11 +108,11 @@ class Asset(db.Model):
     @value.expression
     def value(cls):
         ticker_price = (
-            db.select([Ticker.price]).where(cls.ticker_id == Ticker.id).as_scalar()
+            db.select(Ticker.price).where(cls.ticker_id == Ticker.id).as_scalar()
         )
 
         return case(
-            [(cls.ticker_currency == "usd", cls.shares * ticker_price * usd_rate())],
+            (cls.ticker_currency == "usd", cls.shares * ticker_price * usd_rate()),
             else_=cls.shares * ticker_price,
         )
 
