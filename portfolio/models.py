@@ -91,7 +91,12 @@ class Asset(db.Model):
 
     @property
     def percentage(self):
-        total = db.session.query(db.func.sum(Asset.value)).first()[0]
+        total = (
+            db.session.query(Asset.user_id, db.func.sum(Asset.value).label("value"))
+            .filter(Asset.user_id == self.user_id)
+            .first()
+            .value
+        )
         return self.value / total
 
     @property
