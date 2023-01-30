@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import abort, flash, redirect, render_template, session, url_for, request
 from sqlalchemy import func
 
@@ -202,5 +202,13 @@ def delete_asset(asset_id):
 @app.route("/scrape", methods=["GET"])
 @login_required
 def scrape():
-    update_prices()
-    return {"ret": "all good"}
+    now = datetime.utcnow()
+    last_scrape = (
+        Ticker.query.filter(Ticker.token != "BaseCurrency").first().created_at
+    )
+
+    if (last_scrape + timedelta(minutes=9)) >= now:
+        return {"ret": "wait for a bit mate"}
+    else:
+        update_prices()
+        return {"ret": "all good"}

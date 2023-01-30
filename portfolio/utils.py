@@ -1,3 +1,4 @@
+from datetime import datetime
 import yfinance as yf
 
 from portfolio.models import Ticker, Asset, Performance, Snapshot, db
@@ -11,11 +12,12 @@ def update_prices():
             click.echo("skip base currency")
             continue
 
-        yticker = yf.Ticker(ticker.token).basic_info
+        yticker = yf.Ticker(ticker.token).fast_info
         market_price = yticker['last_price']
         previous_close_price = yticker['previous_close']
 
         ticker.price = market_price
         ticker.previous_close_price = previous_close_price
+        ticker.created_at = datetime.utcnow()
 
     db.session.commit()

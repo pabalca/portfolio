@@ -75,6 +75,7 @@ def scrape():
 
         ticker.price = market_price
         ticker.previous_close_price = previous_close_price
+        ticker.created_at = datetime.utcnow()
         click.echo(f"{ticker.description} = {ticker.price} updated")
 
     db.session.commit()
