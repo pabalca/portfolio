@@ -49,7 +49,7 @@ def initdb(drop):
         ("Core", "CORZQ", "usd"),
         ("Google", "GOOGL", "usd"),
         ("Tesla", "TSLA", "usd"),
-        ("All-World", "VWCE.DE", "eur"),
+        ("Index", "VWCE.DE", "eur"),
         ("Bitcoin", "BTC-USD", "usd"),
         ("Ethereum", "ETH-USD", "usd"),
     ]

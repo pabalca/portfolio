@@ -4,44 +4,53 @@
 
 {% if assets %}
 
-  <div class="row d-flex justify-content-center">
-    <div class="">
+  <div class="row col-auto justify-content-center">
+    <div class="table-responsive-sm">
       <table class="table table-hover table-sm table-bordered">
         <thead>
           <tr>
             <th scope="col"></th>
-            <th scope="col" class="text-center">Price</th>
-            <th scope="col" class="text-center">&Delta;%</th>
-            <th scope="col" class="text-center">PnL</th>
-            <th scope="col" class="text-center">&euro;</th>
-            <th scope="col" class="text-center">#</th>
-            <th scope="col" class="text-center">%</th>
-            <th scope="col" class="text-center">Target</th>
-            <th scope="col" class="text-center">&Delta;&euro;</th>
-            <th scope="col" class="text-center">&Delta;#</th>
+            <th scope="col" class="text-right table-secondary">#</th>
+            <th scope="col" class="text-right table-secondary">Price</th>
+            <th scope="col" class="text-right table-secondary">&Delta;%</th>
+            <th scope="col" class="text-right table-secondary">PnL</th>
+            <th scope="col" class="text-right table-secondary">&euro;</th>
+            <th scope="col" class="text-right table-secondary">%</th>
+            <th scope="col" class="text-right table-secondary">Target</th>
+            <th scope="col" class="text-right table-secondary">&Delta;&euro;</th>
+            <th scope="col" class="text-right table-secondary">&Delta;#</th>
          </tr>
         </thead>
         <tbody>
           {% for item in assets %}
           <tr>
             <th scope="row">{{ item.ticker.description}}</th>
-            <td class="text-right">{{ '{0:0.2f}'.format(item.ticker.price) }}</td>
-            <td class="text-right">{{ '{0:0.2f}'.format(item.ticker.price_change) }}</td>
-            <td class="text-right">{{ '{0:0.2f}'.format(item.pnl) }}</td>
-            <td class="text-right">{{ '{0:0.2f}'.format(item.value)}}</td>
-            <td class="text-right">{{ '{0:0.2f}'.format(item.shares) }}</td>
-            <td class="text-right">{{ '{0:0.2f}'.format(100*item.percentage)}}</td>
-            <td class="text-right">{{ '{0:0.2f}'.format(item.target)}}</td>
-            <td class="text-right">{{ '{0:0.0f}'.format(portfolio.value*item.target/100-item.value)}}</td>
-            <td class="text-right">{{ '{0:0.2f}'.format((portfolio.value*item.target/100-item.value)/item.ticker.price)}}</td>
+            {% if item.sector == "crypto" %}
+              <td class="text-right">{{ '{0:0.2f}'.format(item.shares) }}</td>
+            {% else %}
+              <td class="text-right">{{ '{0:0.0f}'.format(item.shares) }}</td>
+            {% endif %}
+            <td class="text-right">{{ '{:,.2f}'.format(item.ticker.price) }}</td>
+            <td class="text-right">{{ '{:,.2f}'.format(item.ticker.price_change) }}</td>
+            <td class="text-right">{{ '{:,.0f}'.format(item.pnl) }}</td>
+            <td class="text-right">{{ '{:,.0f}'.format(item.value)}}</td>
+            <td class="text-right">{{ '{:,.2f}'.format(100*item.percentage)}}</td>
+            <td class="text-right">{{ '{:,.2f}'.format(item.target)}}</td>
+            <td class="text-right">{{ '{:,.0f}'.format(portfolio.value*item.target/100-item.value)}}</td>
+            {% if item.sector == "crypto" %}
+              <td class="text-right">{{ '{:,.2f}'.format((portfolio.value*item.target/100-item.value)/item.ticker.price)}}</td>
+            {% else %}
+              <td class="text-right">{{ '{:,.0f}'.format((portfolio.value*item.target/100-item.value)/item.ticker.price)}}</td>
+            {% endif %}
           </tr>
           {% endfor %}
           <tr>
-            <th scope="row">TOTAL</th>
+            <th scope="row" class="table-info">TOTAL</th>
             <td class="text-right"></td>
-            <td class="text-right">{{ '{0:0.2f}'.format(portfolio["change"])  }}</td>
-            <td class="text-right">{{ '{0:0.2f}'.format(portfolio["pnl"])  }}</td>
-            <td class="text-right">{{ '{0:0.2f}'.format(portfolio["value"])  }}</td>
+            <td class="text-right"></td>
+            <td class="text-right table-info">{{ '{:,.2f}'.format(portfolio["change"])  }}</td>
+            <td class="text-right table-info">{{ '{:,.0f}'.format(portfolio["pnl"])  }}</td>
+            <td class="text-right table-info">{{ '{:,.0f}'.format(portfolio["value"])  }}</td>
           </tr>
         </tbody>
       </table>
