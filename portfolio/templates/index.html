@@ -4,6 +4,7 @@
 
 {% if assets %}
 
+
   <div class="row col-auto justify-content-center">
     <div class="table-responsive-sm">
       <table class="table table-hover table-sm table-bordered">
@@ -72,6 +73,10 @@
 
   </div>
 
+  <div class="d-flex flex-row-reverse">
+      <small><a class="text-secondary" style="text-decoration:none;" role="button" href="{{ url_for('scrape') }}">last update: {{last_scrape}}</a></small>
+  </div>
+
   <hr>
 
   <div class="row d-flex justify-content-center">
@@ -124,6 +129,7 @@
       ]
     },
     options: {
+      mantainAspectRatio: false,
       responsive: true,
       animation: {
         //duration: 0
@@ -133,7 +139,7 @@
           position: 'right',
         },
         title: {
-          display: true,
+          display: false,
           text: 'Portfolio allocation',
           align: 'start'
         },
@@ -176,7 +182,7 @@
     data: {
       labels: [
           {% for item in stats %}
-              "{{item.created_at.strftime("%m/%d/%Y %H:%M")}}",
+              "{{item.created_at.strftime("%m/%d/%Y")}}",
           {% endfor %},
       ],
       datasets: [
@@ -199,7 +205,7 @@
       plugins: {
         legend: {
           display: false,
-          position: 'bottom',
+          position: 'right',
         },
         title: {
           display: true,
@@ -208,7 +214,7 @@
         tooltip: {
           enabled: true,
         },
-      }
+      },
     }
   });
 
@@ -238,6 +244,7 @@
       ]
     },
     options: {
+      mantainAspectRatio: false,
       responsive: true,
       animation: {
         //duration: 0
@@ -247,7 +254,7 @@
           position: 'right',
         },
         title: {
-          display: true,
+          display: false,
           text: 'Sectors',
           align: 'start'
         },
@@ -283,9 +290,4 @@
     }
   });
 
-function updatePrices () {
-    const res = fetch("{{ url_for('scrape') }}");
-}
-
-var interval = setInterval(function () { updatePrices(); }, 600000);
 {% endblock %}

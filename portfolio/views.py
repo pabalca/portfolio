@@ -81,8 +81,12 @@ def index():
         .all()
     )
 
+    last_scrape = (
+        Ticker.query.filter(Ticker.token != "BaseCurrency").first().created_at.strftime("%m/%d/%Y %H:%M")
+    )
+
     return render_template(
-        "index.html", assets=assets, sectors=sectors, portfolio=portfolio, stats=stats
+        "index.html", assets=assets, sectors=sectors, portfolio=portfolio, stats=stats, last_scrape=last_scrape
     )
 
 
@@ -207,8 +211,9 @@ def scrape():
         Ticker.query.filter(Ticker.token != "BaseCurrency").first().created_at
     )
 
-    if (last_scrape + timedelta(minutes=9)) >= now:
-        return {"ret": "wait for a bit mate"}
-    else:
+    if not (last_scrape + timedelta(minutes=1)) >= now:
         update_prices()
-        return {"ret": "all good"}
+        flash(
+            f"prices successfully updated :)"
+        )
+    return redirect(url_for("index"))
