@@ -88,6 +88,8 @@ def performance():
 
     for user_id in user_ids:
         assets = Asset.query.filter(Asset.user_id == user_id).all()
+        if not assets:
+            continue
 
         # TODO: calculate pnl in database
         value = 0
@@ -104,9 +106,9 @@ def performance():
             user_id=user_id
         )
         db.session.add(p)
+        click.echo(f"<Performance> {p.user_id} {p.created_at} = {p.value}")
 
     db.session.commit()
-    click.echo(f"<Performance> {p.user_id} {p.created_at} = {p.value}")
 
 
 @app.cli.command()
