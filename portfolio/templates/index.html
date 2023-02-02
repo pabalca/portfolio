@@ -18,12 +18,12 @@
             <th scope="col" class="text-center table-secondary">&euro;</th>
             <th scope="col" class="text-center table-secondary">%</th>
             <th scope="col" class="text-center table-secondary">Target</th>
-            <th scope="col" class="text-center table-secondary">MyPrice</th>
-            <th scope="col" class="text-center table-secondary">Unr.%</th>
-            <th scope="col" class="text-center table-secondary">Unr.&euro;</th>
             <th scope="col" class="text-center table-secondary">&Delta;&euro;</th>
             <th scope="col" class="text-center table-secondary">&Delta;#</th>
             <th scope="col" class="text-center table-secondary">Final</th>
+            <th scope="col" class="text-center table-secondary">MyPrice</th>
+            <th scope="col" class="text-center table-secondary">Unr.%</th>
+            <th scope="col" class="text-center table-secondary">Unr.&euro;</th>
          </tr>
         </thead>
         <tbody>
@@ -49,9 +49,6 @@
             <td class="text-right table-info">{{ '{:,.0f}'.format(item.value)}}</td>
             <td class="text-right">{{ '{:,.2f}'.format(100*item.percentage)}}</td>
             <td class="text-right">{{ '{:,.2f}'.format(item.target)}}</td>
-            <td class="text-right">{{ '{:,.2f}'.format(item.buy_price)}}</td>
-            <td class="text-right">{{ '{:,.2f}'.format(100*item.unrealized_percentage)}}</td>
-            <td class="text-right">{{ '{:,.2f}'.format(item.unrealized_pnl)}}</td>
             <td class="text-right">{{ '{:,.0f}'.format(portfolio.value*item.target/100-item.value)}}</td>
             {% if item.sector == "crypto" %}
               <td class="text-right">{{ '{:,.2f}'.format((portfolio.value*item.target/100-item.value)/item.ticker.price)}}</td>
@@ -59,6 +56,9 @@
               <td class="text-right">{{ '{:,.0f}'.format((portfolio.value*item.target/100-item.value)/item.ticker.price)}}</td>
             {% endif %}
             <td class="text-right">{{ '{:,.0f}'.format(item.value+(portfolio.value*item.target/100-item.value))}}</td>
+            <td class="text-right">{{ '{:,.2f}'.format(item.buy_price)}}</td>
+            <td class="text-right">{{ '{:,.2f}'.format(100*item.unrealized_percentage)}}</td>
+            <td class="text-right">{{ '{:,.2f}'.format(item.unrealized_pnl)}}</td>
           </tr>
           {% endfor %}
           <tr>
@@ -74,6 +74,9 @@
             <td class="text-right {{color}} font-weight-bold">{{ '{:,.2f}'.format(portfolio["change"])  }}</td>
             <td class="text-right {{color}} font-weight-bold">{{ '{:,.0f}'.format(portfolio["pnl_today"])  }}</td>
             <td class="text-right table-info font-weight-bold">{{ '{:,.0f}'.format(portfolio["value"])  }}</td>
+            <td class="text-right">{{ '{:,.0f}'.format(100*portfolio["total_percentage"]) }}</td>
+            <td class="text-right"></td>
+            <td class="text-right"></td>
             <td class="text-right"></td>
             <td class="text-right"></td>
             <td class="text-right"></td>

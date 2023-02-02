@@ -68,11 +68,13 @@ def index():
         )
         pnl_today = 0
         unrealized_pnl = 0
+        total_percentage = 0
         for asset in assets:
             pnl_today += asset.pnl_today
             unrealized_pnl += asset.unrealized_pnl
+            total_percentage += asset.percentage
         change = 100 * ((value + pnl_today) / value - 1)
-        portfolio = {"pnl_today": pnl_today, "value": value, "change": change, "unrealized_pnl": unrealized_pnl}
+        portfolio = {"pnl_today": pnl_today, "value": value, "change": change, "unrealized_pnl": unrealized_pnl, "total_percentage": total_percentage}
     else:
         portfolio = None
 
