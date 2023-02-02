@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}Telegram alert{% endblock %}
+{% block content %}
+
+<h4>Telegram Alert</h4>
+<hr>
+<p>Check how to deploy a telegram bot with <a href="https://telegram.me/BotFather">BotFather</a></p>
+<p>If enabled, you will receive a report at end of day/week/month.</p>
+<hr>
+
+<form method="post">
+{{ form.hidden_tag() }}
+{% for field in form if field.widget.input_type != 'hidden' %}
+  {% if field.type == "SubmitField" %}
+    <hr>
+    {{ field(class='btn btn-warning', value="Update") }}
+  {% else %}
+  <div class="form-group row">
+    {{ field.label(class='col-sm-3 col-form-label') }} {{ field(class='form-control col-sm-3') }}
+  </div>
+  {% endif %}
+{% endfor %}
+</form>
+{% if form["enabled"].data == True %}
+<hr>
+<a class="btn btn-success mb-2" href="{{ url_for('test_alert') }}" role="button">Test</a>
+{% endif %}
+
+
+{% endblock %}

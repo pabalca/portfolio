@@ -162,3 +162,16 @@ class Snapshot(db.Model):
 
     def __repr__(self):
         return f"<Snapshot> {self.ticker_name} {self.shares} {self.created_at}"
+
+
+class TelegramAlert(db.Model):
+    id = db.Column(db.String, primary_key=True, default=generate_uuid)
+    user_id = db.Column(db.String, db.ForeignKey(User.id))
+    api_url = db.Column(db.String, default="https://api.telegram.org/")
+    api_token = db.Column(db.String)
+    api_chat = db.Column(db.String)
+    enabled = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<TelegramAlert {self.user_id} = {self.enabled}"

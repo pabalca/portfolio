@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import PasswordField, StringField, FloatField, SubmitField, SelectField
+from wtforms import PasswordField, StringField, FloatField, SubmitField, SelectField, BooleanField
 from wtforms.validators import DataRequired
 
 
@@ -40,4 +40,11 @@ class AssetForm(FlaskForm):
         validators=[DataRequired()],
         choices=[("stocks", "stocks"), ("crypto", "crypto"), ("cash", "cash")],
     )
+    submit = SubmitField("Create")
+
+
+class TelegramAlertForm(FlaskForm):
+    api_token = StringField("Token", validators=[DataRequired()])
+    api_chat = StringField("Chat_id", validators=[DataRequired()])
+    enabled = BooleanField("Enabled")
     submit = SubmitField("Create")

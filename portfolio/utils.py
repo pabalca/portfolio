@@ -1,5 +1,7 @@
 from datetime import datetime
 import yfinance as yf
+import requests
+import json
 
 from portfolio.models import Ticker, Asset, Performance, Snapshot, db
 
@@ -21,3 +23,17 @@ def update_prices():
         ticker.created_at = datetime.utcnow()
 
     db.session.commit()
+
+
+def send_message(api, token, chat_id, message):
+    try:
+        r = requests.post(
+            api + token + "/sendMessage",
+            params={"chat_id": chat_id, "parse_mode": "Markdown", "text": message},
+        )
+        if r.json()["ok"]:
+            return "All good"
+        else:
+            return "Alert sent but received error."
+    except Exception as e:
+        return f"Error sending alert. Exception {e}"

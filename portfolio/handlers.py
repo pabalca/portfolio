@@ -5,8 +5,16 @@ from datetime import datetime
 import yfinance as yf
 
 from portfolio import app
-from portfolio.models import User, Ticker, Asset, Performance, Snapshot, db
-from portfolio.utils import update_prices
+from portfolio.models import (
+    User,
+    Ticker,
+    Asset,
+    Performance,
+    Snapshot,
+    TelegramAlert,
+    db,
+)
+from portfolio.utils import update_prices, send_message
 
 
 @app.shell_context_processor
@@ -18,6 +26,7 @@ def make_shell_context():
         Performance=Performance,
         Snapshot=Snapshot,
         User=User,
+        TelegramAlert=TelegramAlert,
     )
 
 
@@ -84,7 +93,7 @@ def scrape():
 @app.cli.command()
 def performance():
 
-    user_ids = [ user.id for user in User.query.all()]
+    user_ids = [user.id for user in User.query.all()]
 
     for user_id in user_ids:
         assets = Asset.query.filter(Asset.user_id == user_id).all()
@@ -99,16 +108,92 @@ def performance():
             pnl += asset.pnl
         change = 100 * ((value + pnl) / value - 1)
 
-        p = Performance(
-            value=value,
-            pnl=pnl,
-            change=change,
-            user_id=user_id
-        )
+        p = Performance(value=value, pnl=pnl, change=change, user_id=user_id)
         db.session.add(p)
         click.echo(f"<Performance> {p.user_id} {p.created_at} = {p.value}")
 
     db.session.commit()
+
+
+@app.cli.command()
+def alert_move():
+    """
+    Send report if portfolio changed more than threshold in a day
+    """
+
+    user_ids = [user.id for user in User.query.all()]
+    for user_id in user_ids:
+        tg = (
+            TelegramAlert.query.filter(TelegramAlert.enabled == True)
+            .filter(TelegramAlert.user_id == user_id)
+            .first()
+        )
+
+        if not tg:
+            continue
+
+        # get last performance report
+        pf = (
+            Performance.query.filter(Performance.user_id == user_id)
+            .order_by(Performance.created_at.desc())
+            .first()
+        )
+
+        if abs(pf.change > 1.0):
+            plus_symbol = "+" if pf.pnl >= 0 else ""
+            message = "\n".join(
+                (
+                    f"`Portfolio moved {'{0:0.2f}'.format(pf.change)}%`",
+                    f"PNL       *{plus_symbol}{'{:,.0f}'.format(pf.pnl)}*",
+                    f"VALUE   *{'{:,.0f}'.format(pf.value)}*",
+                )
+            )
+            click.echo(f"Sending report for {user_id}")
+            result = send_message(tg.api_url, tg.api_token, tg.api_chat, message)
+            click.echo(result)
+
+
+@app.cli.command()
+def alert_target():
+    """
+    Send alert if asset percentage is over target% + threshold
+    """
+
+    user_ids = [user.id for user in User.query.all()]
+    for user_id in user_ids:
+        tg = (
+            TelegramAlert.query.filter(TelegramAlert.enabled == True)
+            .filter(TelegramAlert.user_id == user_id)
+            .first()
+        )
+
+        if not tg:
+            continue
+
+        # get last performance report
+        assets = (
+            Asset.query.filter(Asset.user_id == user_id)
+            .filter(Asset.sector != "cash")
+            .order_by(Asset.value.desc())
+            .all()
+        )
+
+        message = ""
+
+        for asset in assets:
+            # skip assets that are less than 3%
+            if asset.percentage <=0.03:
+                continue
+
+            if 100*asset.percentage >= 1.1 * asset.target:
+                message += f"`{asset.ticker.description}` is *{'{0:0.2f}'.format(100*asset.percentage)}%*  target={asset.target} threshold={'{0:0.2f}'.format(1.1*asset.target)}%\n"
+                click.echo(f"{asset.ticker.description} is {'{0:0.2f}'.format(100*asset.percentage)}%  target={asset.target} user_id={user_id} threshold={'{0:0.2f}'.format(1.1*asset.target)}% ")
+            elif 100*asset.percentage <= 0.9 * asset.target:
+                message += f"`{asset.ticker.description}` is *{'{0:0.2f}'.format(100*asset.percentage)}%*  target={asset.target} threshold={'{0:0.2f}'.format(0.9*asset.target)}%\n"
+                click.echo(f"{asset.ticker.description} is {'{0:0.2f}'.format(100*asset.percentage)}%  target={asset.target} user_id={user_id}")
+
+        result = send_message(tg.api_url, tg.api_token, tg.api_chat, message)
+        click.echo(result)
 
 
 @app.cli.command()

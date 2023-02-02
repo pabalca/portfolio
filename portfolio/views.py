@@ -3,9 +3,9 @@ from flask import abort, flash, redirect, render_template, session, url_for, req
 from sqlalchemy import func
 
 from portfolio import app
-from portfolio.models import User, Ticker, Asset, Performance, Snapshot, db
-from portfolio.forms import LoginForm, RegisterForm, TickerForm, AssetForm
-from portfolio.utils import update_prices
+from portfolio.models import User, Ticker, Asset, Performance, Snapshot, TelegramAlert, db
+from portfolio.forms import LoginForm, RegisterForm, TickerForm, AssetForm, TelegramAlertForm
+from portfolio.utils import update_prices, send_message
 from portfolio.decorators import login_required
 
 
@@ -224,3 +224,58 @@ def scrape():
         #    f"prices successfully updated :)"
         #)
     return redirect(url_for("index"))
+
+
+@app.route("/telegram_alert", methods=["GET"])
+@login_required
+def telegram_alert():
+    tg = (
+        TelegramAlert.query.filter(Asset.user_id == session.get("user"))
+        .first()
+    )
+    form = TelegramAlertForm()
+
+    if form.validate_on_submit():
+        api_token = form.api_token.data
+        api_chat = form.api_chat.data
+        enabled = form.enabled.data
+        # already exists
+        if tg:
+            tg.api_token = api_token
+            tg.api_chat = api_chat
+            tg.enabled = enabled
+        else:
+            telegram_alert = TelegramAlert(user_id=session.get("user"), api_token=api_token, api_chat=api_chat, enabled=enabled)
+            db.session.add(telegram_alert)
+        db.session.commit()
+        flash(
+            f"Your TelegramAlert to chat is updated."
+        )
+        return redirect(url_for("telegram_alert"))
+
+    # already exists
+    if tg:
+        form.api_token.data = tg.api_token
+        form.api_chat.data = tg.api_chat
+        form.enabled.data = tg.enabled
+
+
+    return render_template("telegram_alert.html", form=form)
+
+
+@app.route("/test_alert>", methods=["GET"])
+@login_required
+def test_alert():
+    tg = (
+        TelegramAlert.query.filter(TelegramAlert.user_id == session.get("user"))
+        .first()
+    )
+    if not tg or not tg.enabled:
+        flash(f"Your alerts are disabled. Please enable before testing {tg}.")
+        return redirect(url_for("telegram_alert"))
+
+    result = send_message(tg.api_url, tg.api_token, tg.api_chat, "test message")
+    flash(result)
+    return redirect(url_for("telegram_alert"))
+
+    
