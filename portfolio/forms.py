@@ -29,14 +29,14 @@ class TickerForm(FlaskForm):
 class AssetForm(FlaskForm):
     ticker = SelectField("Ticker", validators=[DataRequired()])
     shares = FloatField("Shares", validators=[DataRequired()])
-    target = FloatField("Target", validators=[DataRequired()])
+    target = FloatField(
+        "Target",
+        validators=[DataRequired()],
+        #choices=[ (x,f"{x}%") for x in range(1,101)],
+    )
     sector = SelectField(
         "Sector",
         validators=[DataRequired()],
-        choices=[
-            ("stocks", "stocks"),
-            ("crypto", "crypto"),
-            ("cash", "cash")
-        ],
+        choices=[("stocks", "stocks"), ("crypto", "crypto"), ("cash", "cash")],
     )
     submit = SubmitField("Create")

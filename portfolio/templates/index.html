@@ -20,6 +20,7 @@
             <th scope="col" class="text-center table-secondary">Target</th>
             <th scope="col" class="text-center table-secondary">&Delta;&euro;</th>
             <th scope="col" class="text-center table-secondary">&Delta;#</th>
+            <th scope="col" class="text-center table-secondary">Final</th>
          </tr>
         </thead>
         <tbody>
@@ -51,6 +52,7 @@
             {% else %}
               <td class="text-right">{{ '{:,.0f}'.format((portfolio.value*item.target/100-item.value)/item.ticker.price)}}</td>
             {% endif %}
+            <td class="text-right">{{ '{:,.0f}'.format(item.value+(portfolio.value*item.target/100-item.value))}}</td>
           </tr>
           {% endfor %}
           <tr>
@@ -80,11 +82,15 @@
   <hr>
 
   <div class="row d-flex justify-content-center">
-    <div class="col-sm-6">
-      <canvas id="sectorsChart" width="500" height="500"></canvas>
-    </div>
-    <div class="col-sm-6">
+    <div class="col-10">
       <canvas id="assetsChart" width="500" height="500"></canvas>
+    </div>
+  </div>
+
+  <hr>
+  <div class="row d-flex justify-content-center">
+    <div class="col-10">
+      <canvas id="sectorsChart" width="500" height="500"></canvas>
     </div>
   </div>
 
@@ -129,7 +135,6 @@
       ]
     },
     options: {
-      mantainAspectRatio: false,
       responsive: true,
       animation: {
         //duration: 0
@@ -244,7 +249,6 @@
       ]
     },
     options: {
-      mantainAspectRatio: false,
       responsive: true,
       animation: {
         //duration: 0

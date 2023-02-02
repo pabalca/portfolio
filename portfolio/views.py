@@ -213,7 +213,7 @@ def scrape():
 
     if not (last_scrape + timedelta(minutes=1)) >= now:
         update_prices()
-        flash(
-            f"prices successfully updated :)"
-        )
+        #flash(
+        #    f"prices successfully updated :)"
+        #)
     return redirect(url_for("index"))
