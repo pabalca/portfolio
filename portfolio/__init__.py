@@ -18,8 +18,10 @@ app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
 
 from portfolio.models import db
+from flask_migrate import Migrate
 
 db.init_app(app)
+migrate = Migrate(app, db)
 
 import portfolio.handlers
 import portfolio.views
