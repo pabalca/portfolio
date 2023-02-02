@@ -84,6 +84,7 @@ class Asset(db.Model):
     shares = db.Column(db.Float)
     target = db.Column(db.Float, default=0)
     sector = db.Column(db.String)
+    buy_price = db.Column(db.Float)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def __repr__(self):
@@ -98,6 +99,18 @@ class Asset(db.Model):
             .value
         )
         return self.value / total
+
+    @property
+    def pnl_today(self):
+        return self.value * self.ticker.price_change / 100
+
+    @property
+    def unrealized_percentage(self):
+        return (self.ticker.price - self.buy_price) / self.buy_price
+
+    @property
+    def unrealized_pnl(self):
+        return self.value * (self.ticker.price - self.buy_price) / self.buy_price
 
     @property
     def pnl(self):

@@ -18,6 +18,9 @@
             <th scope="col" class="text-center table-secondary">&euro;</th>
             <th scope="col" class="text-center table-secondary">%</th>
             <th scope="col" class="text-center table-secondary">Target</th>
+            <th scope="col" class="text-center table-secondary">MyPrice</th>
+            <th scope="col" class="text-center table-secondary">Unr.%</th>
+            <th scope="col" class="text-center table-secondary">Unr.&euro;</th>
             <th scope="col" class="text-center table-secondary">&Delta;&euro;</th>
             <th scope="col" class="text-center table-secondary">&Delta;#</th>
             <th scope="col" class="text-center table-secondary">Final</th>
@@ -28,7 +31,7 @@
           <tr>
             <th scope="row">{{ item.ticker.description}}</th>
 
-            {% if item.pnl >= 0 %}
+            {% if item.pnl_today >= 0 %}
               {% set color = 'table-success' %}
             {% else %}
               {% set color = 'table-danger' %}
@@ -42,10 +45,13 @@
             {% endif %}
             <td class="text-right {{color}}">{{ '{:,.2f}'.format(item.ticker.price) }}</td>
             <td class="text-right {{color}}">{{ '{:,.2f}'.format(item.ticker.price_change) }}</td>
-            <td class="text-right {{color}}">{{ '{:,.0f}'.format(item.pnl) }}</td>
+            <td class="text-right {{color}}">{{ '{:,.0f}'.format(item.pnl_today) }}</td>
             <td class="text-right table-info">{{ '{:,.0f}'.format(item.value)}}</td>
             <td class="text-right">{{ '{:,.2f}'.format(100*item.percentage)}}</td>
             <td class="text-right">{{ '{:,.2f}'.format(item.target)}}</td>
+            <td class="text-right">{{ '{:,.2f}'.format(item.buy_price)}}</td>
+            <td class="text-right">{{ '{:,.2f}'.format(100*item.unrealized_percentage)}}</td>
+            <td class="text-right">{{ '{:,.2f}'.format(item.unrealized_pnl)}}</td>
             <td class="text-right">{{ '{:,.0f}'.format(portfolio.value*item.target/100-item.value)}}</td>
             {% if item.sector == "crypto" %}
               <td class="text-right">{{ '{:,.2f}'.format((portfolio.value*item.target/100-item.value)/item.ticker.price)}}</td>
@@ -57,7 +63,7 @@
           {% endfor %}
           <tr>
 
-          {% if portfolio.pnl >= 0 %}
+          {% if portfolio.pnl_today >= 0 %}
             {% set color = 'table-success' %}
           {% else %}
             {% set color = 'table-danger' %}
@@ -66,8 +72,18 @@
             <td class="text-right"></td>
             <td class="text-right"></td>
             <td class="text-right {{color}} font-weight-bold">{{ '{:,.2f}'.format(portfolio["change"])  }}</td>
-            <td class="text-right {{color}} font-weight-bold">{{ '{:,.0f}'.format(portfolio["pnl"])  }}</td>
+            <td class="text-right {{color}} font-weight-bold">{{ '{:,.0f}'.format(portfolio["pnl_today"])  }}</td>
             <td class="text-right table-info font-weight-bold">{{ '{:,.0f}'.format(portfolio["value"])  }}</td>
+            <td class="text-right"></td>
+            <td class="text-right"></td>
+            <td class="text-right"></td>
+          {% if portfolio.unrealized_pnl >= 0 %}
+            {% set color = 'table-success' %}
+          {% else %}
+            {% set color = 'table-danger' %}
+          {% endif %}
+            <td class="text-right {{color}} font-weight-bold">{{ '{:,.2f}'.format(100* portfolio["unrealized_pnl"] / portfolio.value)  }}</td>
+            <td class="text-right {{color}} font-weight-bold">{{ '{:,.2f}'.format(portfolio["unrealized_pnl"])  }}</td>
           </tr>
         </tbody>
       </table>
@@ -97,8 +113,10 @@
 
   <hr>
   
-  <div class="row">
-    <canvas id="statsChart" width="600" height="300"></canvas>
+  <div class="row d-flex justify-content-center">
+    <div class="col-10">
+      <canvas id="statsChart" width="600" height="300"></canvas>
+    </div>
   </div>
 {% else %}
 <p>There are still no assets in your portfolio.</p>

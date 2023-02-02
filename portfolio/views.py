@@ -66,11 +66,13 @@ def index():
             .first()
             .value
         )
-        pnl = 0
+        pnl_today = 0
+        unrealized_pnl = 0
         for asset in assets:
-            pnl += asset.pnl
-        change = 100 * ((value + pnl) / value - 1)
-        portfolio = {"pnl": pnl, "value": value, "change": change}
+            pnl_today += asset.pnl_today
+            unrealized_pnl += asset.unrealized_pnl
+        change = 100 * ((value + pnl_today) / value - 1)
+        portfolio = {"pnl_today": pnl_today, "value": value, "change": change, "unrealized_pnl": unrealized_pnl}
     else:
         portfolio = None
 
@@ -139,6 +141,7 @@ def asset():
         shares = form.shares.data
         sector = form.sector.data
         target = form.target.data
+        buy_price = form.buy_price.data
         a = Asset(
             user_id=session.get("user"),
             ticker_id=ticker,
@@ -173,6 +176,7 @@ def edit_asset(asset_id):
         asset.shares = form.shares.data
         asset.sector = form.sector.data
         asset.target = form.target.data
+        asset.buy_price = form.buy_price.data
         db.session.commit()
         flash(
             f"Your asset <{asset.ticker.description} is updated with shares {asset.shares}"
@@ -180,6 +184,7 @@ def edit_asset(asset_id):
         return redirect(url_for("asset"))
     form.shares.data = asset.shares
     form.target.data = asset.target
+    form.buy_price.data = asset.buy_price
 
     return render_template("edit_asset.html", form=form, asset_id=asset_id)
 
