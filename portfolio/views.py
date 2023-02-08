@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from flask import abort, flash, redirect, render_template, session, url_for, request
-from sqlalchemy import func
+from sqlalchemy import func, extract
 
 from portfolio import app
 from portfolio.models import User, Ticker, Asset, Performance, Snapshot, TelegramAlert, db
@@ -81,6 +81,7 @@ def index():
     # performance stats
     stats = (
         Performance.query.filter(Performance.user_id == session.get("user"))
+        .group_by(extract('year', Performance.created_at), extract('month', Performance.created_at), extract('day', Performance.created_at))
         .order_by(Performance.created_at.asc())
         .all()
     )

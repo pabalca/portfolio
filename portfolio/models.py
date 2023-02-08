@@ -147,6 +147,10 @@ class Performance(db.Model):
     def __repr__(self):
         return f"<Performance> {self.created_at} =  {self.pnl}"
 
+    @hybrid_property 
+    def performance_day(self):
+        return self.created_at.strftime("%Y-%m-%d")
+
 
 # what portfolio did I have in a specific date?
 class Snapshot(db.Model):
