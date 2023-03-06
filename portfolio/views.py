@@ -52,7 +52,7 @@ def index():
         .all()
     )
     sectors = (
-        db.session.query(Asset.sector, db.func.sum(Asset.value).label("value"))
+        db.session.query(Asset.sector, db.func.sum(Asset.value).label("value"), db.func.sum(Asset.target).label("target"))
         .filter(Asset.user_id == session.get("user"))
         .group_by(Asset.sector)
         .all()
@@ -69,12 +69,14 @@ def index():
         pnl_today = 0
         unrealized_pnl = 0
         total_percentage = 0
+        total_target = 0
         for asset in assets:
             pnl_today += asset.pnl_today
             unrealized_pnl += asset.unrealized_pnl
             total_percentage += asset.percentage
+            total_target += asset.target
         change = 100 * ((value + pnl_today) / value - 1)
-        portfolio = {"pnl_today": pnl_today, "value": value, "change": change, "unrealized_pnl": unrealized_pnl, "total_percentage": total_percentage}
+        portfolio = {"pnl_today": pnl_today, "value": value, "change": change, "unrealized_pnl": unrealized_pnl, "total_percentage": total_percentage, "total_target": total_target}
     else:
         portfolio = None
 
@@ -151,6 +153,7 @@ def asset():
             shares=shares,
             sector=sector,
             target=target,
+            buy_price=buy_price,
         )
         db.session.add(a)
         db.session.commit()

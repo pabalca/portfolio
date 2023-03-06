@@ -139,7 +139,8 @@ def alert_move():
             .first()
         )
 
-        if abs(pf.change > 1.0):
+        # if abs(pf.change > 1.0):
+        if True:
             plus_symbol = "+" if pf.pnl >= 0 else ""
             message = "\n".join(
                 (
