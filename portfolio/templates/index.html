@@ -75,7 +75,7 @@
             <td class="text-right {{color}} font-weight-bold">{{ '{:,.0f}'.format(portfolio["pnl_today"])  }}</td>
             <td class="text-right table-info font-weight-bold">{{ '{:,.0f}'.format(portfolio["value"])  }}</td>
             <td class="text-right">{{ '{:,.0f}'.format(100*portfolio["total_percentage"]) }}</td>
-            <td class="text-right"></td>
+            <td class="text-right">{{ '{:,.2f}'.format(portfolio["total_target"]) }}</td>
             <td class="text-right"></td>
             <td class="text-right"></td>
             <td class="text-right"></td>

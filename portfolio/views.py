@@ -183,6 +183,7 @@ def edit_asset(asset_id):
         asset.sector = form.sector.data
         asset.target = form.target.data
         asset.buy_price = form.buy_price.data
+        asset.ticker.price = form.ticker_price.data
         db.session.commit()
         flash(
             f"Your asset <{asset.ticker.description} is updated with shares {asset.shares}"
@@ -191,6 +192,7 @@ def edit_asset(asset_id):
     form.shares.data = asset.shares
     form.target.data = asset.target
     form.buy_price.data = asset.buy_price
+    form.ticker_price.data = asset.ticker.price
 
     return render_template("edit_asset.html", form=form, asset_id=asset_id)
 
