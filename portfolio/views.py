@@ -44,16 +44,27 @@ def logout():
 
 
 @app.route("/", methods=["GET"])
+@app.route("/<user_id>", methods=["GET"])
 @login_required
-def index():
+def index(user_id=None):
+    # viewonly mode
+    if user_id:
+        # check that the requested user exists.
+        if not User.query.filter(User.id == user_id).first():
+            return redirect(url_for("login"))
+    else:
+        # user used the default login method
+        # get user from the session object
+        user_id = session.get("user")
+
     assets = (
-        Asset.query.filter(Asset.user_id == session.get("user"))
+        Asset.query.filter(Asset.user_id == user_id)
         .order_by(Asset.value.desc())
         .all()
     )
     sectors = (
         db.session.query(Asset.sector, db.func.sum(Asset.value).label("value"), db.func.sum(Asset.target).label("target"))
-        .filter(Asset.user_id == session.get("user"))
+        .filter(Asset.user_id == user_id)
         .group_by(Asset.sector)
         .all()
     )
@@ -62,7 +73,7 @@ def index():
         # portfolio stats
         value = (
             db.session.query(db.func.sum(Asset.value).label("value"))
-            .filter(Asset.user_id == session.get("user"))
+            .filter(Asset.user_id == user_id)
             .first()
             .value
         )
@@ -82,7 +93,7 @@ def index():
 
     # performance stats
     stats = (
-        Performance.query.filter(Performance.user_id == session.get("user"))
+        Performance.query.filter(Performance.user_id == user_id)
         .group_by(extract('year', Performance.created_at), extract('month', Performance.created_at), extract('day', Performance.created_at))
         .order_by(Performance.created_at.asc())
         .all()
