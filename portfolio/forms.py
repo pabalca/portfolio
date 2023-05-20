@@ -29,7 +29,7 @@ class TickerForm(FlaskForm):
 class AssetForm(FlaskForm):
     ticker = SelectField("Ticker", validators=[DataRequired()])
     shares = FloatField("Shares", validators=[DataRequired()])
-    ticker_price = FloatField("Price", validators=[DataRequired()])
+    ticker_price = FloatField("Price", validators=[])
     buy_price = FloatField("Buy price", validators=[DataRequired()])
     target = FloatField(
         "Target",
