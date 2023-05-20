@@ -52,6 +52,10 @@ def index(user_id=None):
         # check that the requested user exists.
         if not User.query.filter(User.id == user_id).first():
             return redirect(url_for("login"))
+        session["logged_in"] = True
+        session["user"] = user_id
+        # update_prices()
+        return redirect(url_for("index"))
     else:
         # user used the default login method
         # get user from the session object
@@ -199,7 +203,7 @@ def edit_asset(asset_id):
         flash(
             f"Your asset <{asset.ticker.description} is updated with shares {asset.shares}"
         )
-        return redirect(url_for("asset"))
+        return redirect(url_for("index"))
     form.shares.data = asset.shares
     form.target.data = asset.target
     form.buy_price.data = asset.buy_price
