@@ -39,7 +39,7 @@ class AssetForm(FlaskForm):
     sector = SelectField(
         "Sector",
         validators=[DataRequired()],
-        choices=[("stocks", "stocks"),("index", "index"), ("crypto", "crypto"), ("cash", "cash")],
+        choices=[("stocks", "stocks"),("index", "index"), ("crypto", "crypto"), ("cash", "cash"), ("home", "home")],
     )
     submit = SubmitField("Create")
 

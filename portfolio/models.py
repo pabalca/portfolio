@@ -61,7 +61,7 @@ class Ticker(db.Model):
         if not price or not previous_close_price:
             import yfinance as yf
 
-            yticker = yf.Ticker(token).basic_info
+            yticker = yf.Ticker(token).fast_info
             self.price = yticker["last_price"]
             self.previous_close_price = yticker["previous_close"]
         else:
@@ -100,9 +100,20 @@ class Asset(db.Model):
         )
         return self.value / total
 
-    @property
+    @hybrid_property
     def pnl_today(self):
         return self.value * self.ticker.price_change / 100
+
+    @pnl_today.expression
+    def pnl_today(cls):
+        ticker_price = (
+            db.select(Ticker.price).where(cls.ticker_id == Ticker.id).as_scalar()
+        )
+        ticker_price_previous = (
+            db.select(Ticker.previous_close_price).where(cls.ticker_id == Ticker.id).as_scalar()
+        )
+        ticker_price_change = 100 * (ticker_price / ticker_price_previous - 1)
+        return cls.value * ticker_price_change / 100
 
     @property
     def unrealized_percentage(self):
@@ -110,7 +121,7 @@ class Asset(db.Model):
 
     @property
     def unrealized_pnl(self):
-        return self.value * (self.ticker.price - self.buy_price) / self.buy_price
+        return self.value * (1 - 1/(1+self.unrealized_percentage))
 
     @property
     def pnl(self):
@@ -139,6 +150,7 @@ class Asset(db.Model):
 class Performance(db.Model):
     id = db.Column(db.String, primary_key=True, default=generate_uuid)
     user_id = db.Column(db.String, db.ForeignKey(User.id))
+    sector = db.Column(db.String)
     value = db.Column(db.Float)
     pnl = db.Column(db.Float)
     change = db.Column(db.Float)

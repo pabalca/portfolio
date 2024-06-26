@@ -1,0 +1,38 @@
+
+{% if win_lose_stats %}
+  <div class="row justify-content-center">
+    <div class="table-responsive-sm col-auto">
+      <table class="table table-hover table-sm table-bordered">
+        <thead>
+          <tr>
+            <th scope="col"></th>
+            <th scope="col" class="text-center table-secondary table-success">WIN</th>
+            <th scope="col" class="text-center table-secondary table-danger">LOSS</th>
+            <th scope="col" class="text-center table-secondary">&Delta;</th>
+         </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">day count</th>
+            <th scope="row">{{ win_lose_stats["win_days"] }}</th>
+            <th scope="row">{{ win_lose_stats["lose_days"] }}</th>
+            <th scope="row">{{win_lose_stats["win_days"] -  win_lose_stats["lose_days"] }}</th>
+          </tr>
+          <tr>
+            <th scope="row">average</th>
+            <th scope="row">{{ '{:,.0f}'.format(win_lose_stats["win_average"] )}}</th>
+            <th scope="row">{{ '{:,.0f}'.format(win_lose_stats["lose_average"] )}}</th>
+            <th scope="row">{{ '{:,.0f}'.format(win_lose_stats["win_average"] + win_lose_stats["lose_average"] )}}</th>
+          </tr>
+          <tr>
+            <th scope="row">max</th>
+            <th scope="row">{{ '{:,.0f}'.format(win_lose_stats["win_max"] )}}</th>
+            <th scope="row">{{ '{:,.0f}'.format(win_lose_stats["lose_max"] )}}</th>
+            <th scope="row"></th>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+{% endif %}

@@ -118,8 +118,8 @@
 
 
   <div class="row d-flex justify-content-center">
-    <div class="col-auto">
-      <canvas id="assetsChart" width="400" height="400"></canvas>
+    <div class="col-10">
+      <canvas id="assetsChart" width="300" height="300"></canvas>
     </div>
   </div>
   <hr>
@@ -127,20 +127,60 @@
 
 
 {% if not select_sector %}
-{% include 'sectors.html' %}
-{% include 'ath.html' %}
 
+{% if win_lose_stats %}
+  <div class="row col-auto justify-content-center">
+    <div class="table-responsive-sm">
+      <table class="table table-hover table-sm table-bordered">
+        <thead>
+          <tr>
+            <th scope="col"></th>
+            <th scope="col" class="text-center table-secondary table-success">WIN</th>
+            <th scope="col" class="text-center table-secondary table-danger">LOSS</th>
+            <th scope="col" class="text-center table-secondary">&Delta;</th>
+         </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">day count</th>
+            <th scope="row">{{ win_lose_stats["win_days"] }}</th>
+            <th scope="row">{{ win_lose_stats["lose_days"] }}</th>
+            <th scope="row">{{win_lose_stats["win_days"] -  win_lose_stats["lose_days"] }}</th>
+          </tr>
+          <tr>
+            <th scope="row">average</th>
+            <th scope="row">{{ '{:,.0f}'.format(win_lose_stats["win_average"] )}}</th>
+            <th scope="row">{{ '{:,.0f}'.format(win_lose_stats["lose_average"] )}}</th>
+            <th scope="row">{{ '{:,.0f}'.format(win_lose_stats["win_average"] + win_lose_stats["lose_average"] )}}</th>
+          </tr>
+          <tr>
+            <th scope="row">max</th>
+            <th scope="row">{{ '{:,.0f}'.format(win_lose_stats["win_max"] )}}</th>
+            <th scope="row">{{ '{:,.0f}'.format(win_lose_stats["lose_max"] )}}</th>
+            <th scope="row"></th>
+          </tr>
+          <tr>
+            <th scope="row">cumulative</th>
+            <th scope="row">{{ '{:,.0f}'.format(win_lose_stats["win_total"] )}}</th>
+            <th scope="row">{{ '{:,.0f}'.format(win_lose_stats["lose_total"] )}}</th>
+            <th scope="row">{{ '{:,.0f}'.format(win_lose_stats["win_total"] + win_lose_stats["lose_total"] )}}</th>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+         
+  <hr>
 
-
+{% endif %}
   <div class="row d-flex justify-content-center">
     <div class="col-10">
-      <canvas id="statsChart" width="700" height="500"></canvas>
+      <canvas id="statsChart" width="700" height="400"></canvas>
     </div>
   </div>
 
   <hr>
 
-<!--- 
   <div class="row d-flex justify-content-center">
     <div class="col-5">
       <canvas id="sectorsChart" width="600" height="600"></canvas>
@@ -150,7 +190,6 @@
     </div>
   </div>
 
--->
   
 
 {% endif %}
@@ -234,156 +273,122 @@
     }
   });
 
-const ctx2 = document.getElementById('statsChart');
+  const ctx2 = document.getElementById('statsChart');
 
-new Chart(ctx2, {
-  type: 'line',
-  data: {
-    labels: [
-      {% for item in stats %}
-          "{{item.created_at.strftime("%m/%d/%Y")}}",
-      {% endfor %}
-    ],
-    datasets: [
-      {
-        label: 'Value: ',
-        data: [
+  new Chart(ctx2, {
+    type: 'line',
+    data: {
+      labels: [
           {% for item in stats %}
-              "{{'{0:0.0f}'.format(item.value)}}",
-          {% endfor %}
+              "{{item.created_at.strftime("%m/%d/%Y")}}",
+          {% endfor %},
+      ],
+      datasets: [
+      {
+        label: 'Value EUR: ',
+        data: [
+            {% for item in stats %}
+                "{{'{0:0.0f}'.format(item.value)}}",
+            {% endfor %},
+
         ],
-        backgroundColor: 'rgb(60, 60, 255, 0.8)',
-        borderWidth: 3,
+        borderColor: 'blue',
+        borderWidth: 2,
         fill: false,
         yAxisID: 'y-axis-1',
         pointRadius: 1,
-        borderColor : [
-          {% for item in stats %}
-              {% if loop.last %}
-                  'orange', // Color for the last point
-              {% else %}
-                  'blue', // Color for other points
-              {% endif %}
-          {% endfor %}
-        ],
       },
+
       {
-        label: 'PNL',
+        label: '% change today',
         data: [
-          {% for item in stats %}
-              "{{'{0:0.0f}'.format(item.pnl)}}",
-          {% endfor %}
+          // Data for the second dataset
+            {% for item in stats %}
+                // "{{'{0:0.0f}'.format(item.move)}}",
+                "{{ 100 * item.move }}",
+            {% endfor %},
+
         ],
         type: 'bar',
         backgroundColor: function(context) {
           var value = context.dataset.data[context.dataIndex];
-          var color = value >= 0 ? 'rgba(0, 255, 0, 0.25)' : 'rgba(255, 0, 0, 0.25)';
+          var color = value >= 0 ? 'rgba(0, 255, 0, 0.3)' : 'rgba(255, 0, 0, 0.3)';
           return color;
         },
         fill: false,
         yAxisID: 'y-axis-2',
       },
       {
-        label: 'Volatility 7d',
+        label: 'Volatility 30d',
         data: [
-          {% for item in stats %}
-              "{{ 100 * item.rolling_avg_30d }}",
-          {% endfor %}
+          // Data for the second dataset
+            {% for item in stats %}
+                " {{ 100 * item.rolling_avg_30d }}",
+            {% endfor %},
+
         ],
         backgroundColor: 'purple',
         borderColor: 'purple',
         borderWidth: 1,
         fill: false,
-        yAxisID: 'y-axis-3',
+        yAxisID: 'y-axis-2',
         pointRadius: 0,
       },
-      {
-        label: '-Volatility 7d',
-        data: [
-          {% for item in stats %}
-              "{{ -100 * item.rolling_avg_30d }}",
-          {% endfor %}
-        ],
-        backgroundColor: 'purple',
-        borderColor: 'purple',
-        borderWidth: 1,
-        fill: false,
-        yAxisID: 'y-axis-3',
-        pointRadius: 0,
-      },
-      //{
-       // label: 'Change',
-       // data: [
-       //   {% for item in stats %}
-       //       "{{ 100*item.move }}",
-       //   {% endfor %}
-       // ],
-       // type: 'bubble',
-       // borderColor: 'rgba(0, 0, 0, 0)',
-       // backgroundColor: function(context) {
-       //   var value = context.dataset.data[context.dataIndex];
-       //   var color = value >= 0 ? 'rgba(0, 255, 100, 0.7)' : 'rgba(255, 0, 0, 0.7)';
-       //   return color;
-       // },
-       // fill: false,
-       // yAxisID: 'y-axis-3',
-      // },
-    ]
-  },
-  options: {
-    responsive: true,
-    plugins: {
-      legend: {
-        display: true,
-        position: 'bottom',
-      },
-      title: {
-        display: true,
-        text: 'Performance'
-      },
-      tooltip: {
-        enabled: true,
-      },
+      ]
     },
+    options: {
+      responsive: true,
+      animation: {
+        //duration: 0
+      },
+      plugins: {
+        legend: {
+          display: true,
+          position: 'bottom',
+        },
+        title: {
+          display: true,
+          text: 'Performance'
+        },
+        tooltip: {
+          enabled: true,
+        },
+      },
     scales: {
-      'y-axis-1': {
-        type: 'linear',
-        display: true,
-        position: 'right',
-        grid: {
-          drawOnChartArea: true,
+      yAxes: [
+        {
+          id: 'y-axis-1', // Identifier for the first y-axis
+          type: 'linear', // Linear scale
+          display: true,
+          position: 'right',
+          grid: {
+            drawOnChartArea: true, // only want the grid lines for one axis to show up
+          },
         },
-      },
-      'y-axis-2': {
-        type: 'linear',
-        display: true,
-        position: 'left',
-        grid: {
-          drawOnChartArea: false,
+        {
+          id: 'y-axis-2', // Identifier for the second y-axis
+          type: 'linear', // Linear scale
+          display: true,
+          position: 'left',
+          grid: {
+            display: false,
+            drawOnChartArea: false, // only want the grid lines for one axis to show up
+          },
         },
-      },
-      'y-axis-3': {
-        type: 'linear',
-        display: true,
-        position: 'right',
-        grid: {
-          drawOnChartArea: false,
-        },
-        min: -5,
-        max: 5,
-      },
-      x: {
-        type: 'category',
-        labels: [
-          {% for item in stats %}
-              "{{item.created_at.strftime("%m/%d/%Y")}}",
-          {% endfor %}
-        ],
-      }
+        {
+          id: 'y-axis-3', // Identifier for the second y-axis
+          type: 'linear', // Linear scale
+          display: false,
+          position: 'right',
+          grid: {
+            display: false,
+            drawOnChartArea: false, // only want the grid lines for one axis to show up
+          },
+        }
+      ]
     }
   }
 });
-
 
   const ctx3 = document.getElementById('sectorsChart');
 

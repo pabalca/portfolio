@@ -16,6 +16,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 # no cache
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
+app.config['DEBUG'] = True
 
 from portfolio.models import db
 from flask_migrate import Migrate

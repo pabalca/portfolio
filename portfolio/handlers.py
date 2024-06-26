@@ -78,7 +78,7 @@ def scrape():
             click.echo("skip base currency")
             continue
 
-        yticker = yf.Ticker(ticker.token).basic_info
+        yticker = yf.Ticker(ticker.token).fast_info
         market_price = yticker["last_price"]
         previous_close_price = yticker["previous_close"]
 
@@ -90,8 +90,8 @@ def scrape():
     db.session.commit()
 
 
-@app.cli.command()
-def performance():
+def calculate_performance():
+    pp = list()
 
     user_ids = [user.id for user in User.query.all()]
 
@@ -109,6 +109,15 @@ def performance():
         change = 100 * ((value + pnl) / value - 1)
 
         p = Performance(value=value, pnl=pnl, change=change, user_id=user_id)
+        pp.append(p)
+    return pp
+
+
+@app.cli.command()
+def performance():
+
+    pp = calculate_performance()
+    for p in pp:
         db.session.add(p)
         click.echo(f"<Performance> {p.user_id} {p.created_at} = {p.value}")
 
@@ -133,25 +142,21 @@ def alert_move():
             continue
 
         # get last performance report
-        pf = (
-            Performance.query.filter(Performance.user_id == user_id)
-            .order_by(Performance.created_at.desc())
-            .first()
-        )
+        pp = calculate_performance()
+        for pf in pp:
+            if pf.user_id == user_id:
 
-        # if abs(pf.change > 1.0):
-        if True:
-            plus_symbol = "+" if pf.pnl >= 0 else ""
-            message = "\n".join(
-                (
-                    f"`Portfolio moved {'{0:0.2f}'.format(pf.change)}%`",
-                    f"PNL       *{plus_symbol}{'{:,.0f}'.format(pf.pnl)}*",
-                    f"VALUE   *{'{:,.0f}'.format(pf.value)}*",
+                plus_symbol = "+" if pf.pnl >= 0 else ""
+                message = "\n".join(
+                    (
+                        f"`Portfolio moved {'{0:0.2f}'.format(pf.change)}%`",
+                        f"PNL       *{plus_symbol}{'{:,.0f}'.format(pf.pnl)}*",
+                        f"VALUE   *{'{:,.0f}'.format(pf.value)}*",
+                    )
                 )
-            )
-            click.echo(f"Sending report for {user_id}")
-            result = send_message(tg.api_url, tg.api_token, tg.api_chat, message)
-            click.echo(result)
+                click.echo(f"Sending report for {user_id}")
+                result = send_message(tg.api_url, tg.api_token, tg.api_chat, message)
+                click.echo(result)
 
 
 @app.cli.command()
