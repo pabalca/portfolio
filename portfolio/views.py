@@ -58,6 +58,50 @@ def logout():
     return redirect(url_for("login"))
 
 
+@app.route("/<sector_name>", methods=["GET"])
+@login_required
+def sector(sector_name=None):
+    user_id = session.get("user")
+
+    # assets data
+    assets = (
+        Asset.query
+        .filter(Asset.user_id == user_id)
+        .filter(Asset.sector == sector_name)
+        .order_by(Asset.value.desc())
+        .all()
+    )
+
+    # get all assets performance of the selected sector
+    # portfolio data
+    portfolio = (
+        db.session.query(
+            db.func.sum(Asset.value).label("value"),
+            db.func.sum(Asset.pnl_today).label("pnl_today"),
+            (100 * db.func.sum(Asset.pnl_today) / db.func.sum(Asset.value)).label("change"),
+            db.func.sum(Asset.target).label("total_target"),
+            db.func.sum(Asset.unrealized_pnl).label("unrealized_pnl"),
+        )
+        .filter(Asset.user_id == user_id)
+        .filter(Asset.sector == sector_name)
+        .order_by(db.func.sum(Asset.value).desc())
+        .first()
+    )
+
+    last_scrape = (
+        Ticker.query.filter(Ticker.token != "BaseCurrency")
+        .first()
+        .created_at.strftime("%m/%d/%Y %H:%M")
+    )
+
+    return render_template(
+        "sector.html",
+        assets=assets,
+        portfolio=portfolio,
+        last_scrape=last_scrape,
+    )
+
+
 @app.route("/", methods=["GET"])
 @app.route("/<user_id>", methods=["GET"])
 @login_required
@@ -76,8 +120,6 @@ def index(user_id=None):
         # get user from the session object
         user_id = session.get("user")
 
-
-
     sectors = (
         db.session.query(
             Asset.sector,
@@ -90,8 +132,7 @@ def index(user_id=None):
         .group_by(Asset.sector)
         .order_by(db.func.sum(Asset.value).desc())
         .all()
-    )   
-
+    )
 
     select_sector = request.args.get('sector')
     if select_sector:

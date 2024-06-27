@@ -90,15 +90,23 @@ class Asset(db.Model):
     def __repr__(self):
         return f"<Asset> {self.ticker} {self.shares}"
 
-    @property
-    def percentage(self):
-        total = (
-            db.session.query(Asset.user_id, db.func.sum(Asset.value).label("value"))
-            .filter(Asset.user_id == self.user_id)
-            .first()
-            .value
+    @hybrid_property
+    def value(self):
+        if self.ticker.currency == "usd":
+            return self.shares * self.ticker.price * usd_rate()
+        else:
+            return self.shares * self.ticker.price
+
+    @value.expression
+    def value(cls):
+        ticker_price = (
+            db.select(Ticker.price).where(cls.ticker_id == Ticker.id).as_scalar()
         )
-        return self.value / total
+
+        return case(
+            (cls.ticker_currency == "usd", cls.shares * ticker_price * usd_rate()),
+            else_=cls.shares * ticker_price,
+        )
 
     @hybrid_property
     def pnl_today(self):
@@ -119,31 +127,37 @@ class Asset(db.Model):
     def unrealized_percentage(self):
         return (self.ticker.price - self.buy_price) / self.buy_price
 
-    @property
+    @hybrid_property
     def unrealized_pnl(self):
-        return self.value * (1 - 1/(1+self.unrealized_percentage))
+        unr_per = (self.ticker.price - self.buy_price) / self.buy_price
+        return self.value * (1 - 1/(1+unr_per))
+
+    @unrealized_pnl.expression
+    def unrealized_pnl(cls):
+        ticker_price = (
+            db.select(Ticker.price).where(cls.ticker_id == Ticker.id).as_scalar()
+        )
+
+        unr_per = (ticker_price - cls.buy_price) / cls.buy_price
+        return cls.value * (1 - 1 / (1 + unr_per))
+
+
+    @property
+    def percentage(self):
+        total = (
+            db.session.query(Asset.user_id, db.func.sum(Asset.value).label("value"))
+            .filter(Asset.user_id == self.user_id)
+            .first()
+            .value
+        )
+        return self.value / total
+
 
     @property
     def pnl(self):
         return self.value * self.ticker.price_change / 100
 
-    @hybrid_property
-    def value(self):
-        if self.ticker.currency == "usd":
-            return self.shares * self.ticker.price * usd_rate()
-        else:
-            return self.shares * self.ticker.price
 
-    @value.expression
-    def value(cls):
-        ticker_price = (
-            db.select(Ticker.price).where(cls.ticker_id == Ticker.id).as_scalar()
-        )
-
-        return case(
-            (cls.ticker_currency == "usd", cls.shares * ticker_price * usd_rate()),
-            else_=cls.shares * ticker_price,
-        )
 
 
 # portfolio stats over time
