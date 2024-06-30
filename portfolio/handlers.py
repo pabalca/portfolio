@@ -3,6 +3,7 @@ import requests
 import time
 from datetime import datetime
 import yfinance as yf
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from portfolio import app
 from portfolio.models import (
@@ -12,6 +13,7 @@ from portfolio.models import (
     Performance,
     Snapshot,
     TelegramAlert,
+    Wallet,
     db,
 )
 from portfolio.utils import update_prices, send_message
@@ -73,10 +75,10 @@ def initdb(drop):
 def scrape():
     tickers = Ticker.query.filter(Ticker.token != "BaseCurrency").all()
 
-    for ticker in tickers:
+    def fetch_ticker_data(ticker):
         if ticker.token == "BaseCurrency":
             click.echo("skip base currency")
-            continue
+            return
 
         yticker = yf.Ticker(ticker.token).fast_info
         market_price = yticker["last_price"]
@@ -85,7 +87,17 @@ def scrape():
         ticker.price = market_price
         ticker.previous_close_price = previous_close_price
         ticker.created_at = datetime.utcnow()
+
         click.echo(f"{ticker.description} = {ticker.price} updated")
+
+    with ThreadPoolExecutor(max_workers=10) as executor:  # Adjust max_workers as needed
+        futures = [executor.submit(fetch_ticker_data, ticker) for ticker in tickers]
+
+        for future in as_completed(futures):
+            try:
+                future.result()  # This ensures any exceptions raised in threads are propagated
+            except Exception as exc:
+                click.echo(f"Exception occurred: {exc}")
 
     db.session.commit()
 

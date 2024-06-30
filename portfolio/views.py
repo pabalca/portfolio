@@ -10,8 +10,11 @@ from portfolio.models import (
     Performance,
     Snapshot,
     TelegramAlert,
+    Wallet,
+    Portfolio,
     db,
 )
+
 from portfolio.forms import (
     LoginForm,
     RegisterForm,
@@ -22,6 +25,19 @@ from portfolio.forms import (
 from portfolio.utils import update_prices, send_message
 from portfolio.decorators import login_required
 import numpy as np
+
+# Custom Jinja2 filter to format numbers to two decimal places
+def format_decimal(value):
+    return '{:,.2f}'.format(value)
+
+
+def format_int(value):
+    return '{:,.0f}'.format(value)
+
+
+app.jinja_env.filters['format_decimal'] = format_decimal
+app.jinja_env.filters['format_int'] = format_int
+
 
 
 @app.route("/register", methods=["GET", "POST"])
@@ -58,35 +74,21 @@ def logout():
     return redirect(url_for("login"))
 
 
-@app.route("/<sector_name>", methods=["GET"])
+@app.route("/wallet/<wallet_id>", methods=["GET"])
 @login_required
-def sector(sector_name=None):
+def wallet(wallet_id=None):
     user_id = session.get("user")
+    user = User.query.get(user_id)
 
-    # assets data
-    assets = (
-        Asset.query
-        .filter(Asset.user_id == user_id)
-        .filter(Asset.sector == sector_name)
-        .order_by(Asset.value.desc())
-        .all()
+    # TODO: order_by value in database
+    assets = sorted(
+        Wallet.query.get(wallet_id).assets,
+        key=lambda asset: asset.value,
+        reverse=True
     )
 
-    # get all assets performance of the selected sector
-    # portfolio data
-    portfolio = (
-        db.session.query(
-            db.func.sum(Asset.value).label("value"),
-            db.func.sum(Asset.pnl_today).label("pnl_today"),
-            (100 * db.func.sum(Asset.pnl_today) / db.func.sum(Asset.value)).label("change"),
-            db.func.sum(Asset.target).label("total_target"),
-            db.func.sum(Asset.unrealized_pnl).label("unrealized_pnl"),
-        )
-        .filter(Asset.user_id == user_id)
-        .filter(Asset.sector == sector_name)
-        .order_by(db.func.sum(Asset.value).desc())
-        .first()
-    )
+    portfolio = Portfolio(assets)
+    portfolio.calculate_asset_deltas()
 
     last_scrape = (
         Ticker.query.filter(Ticker.token != "BaseCurrency")
@@ -96,6 +98,34 @@ def sector(sector_name=None):
 
     return render_template(
         "sector.html",
+        user=user,
+        assets=assets,
+        portfolio=portfolio,
+        last_scrape=last_scrape,
+    )
+
+
+@app.route("/total", methods=["GET"])
+@login_required
+def total():
+    user_id = session.get("user")
+    user = User.query.get(user_id)
+
+    # TODO: order_by value in database
+    assets = sorted(user.assets, key=lambda asset: asset.value, reverse=True)
+
+    portfolio = Portfolio(assets)
+    portfolio.calculate_asset_deltas()
+
+    last_scrape = (
+        Ticker.query.filter(Ticker.token != "BaseCurrency")
+        .first()
+        .created_at.strftime("%m/%d/%Y %H:%M")
+    )
+
+    return render_template(
+        "sector.html",
+        user=user,
         assets=assets,
         portfolio=portfolio,
         last_scrape=last_scrape,
@@ -104,7 +134,7 @@ def sector(sector_name=None):
 
 @app.route("/", methods=["GET"])
 @app.route("/<user_id>", methods=["GET"])
-@login_required
+# @login_required
 def index(user_id=None):
     # viewonly mode
     if user_id:
@@ -120,6 +150,14 @@ def index(user_id=None):
         # get user from the session object
         user_id = session.get("user")
 
+    user = User.query.get(user_id)
+    wallets = user.wallets
+
+    # TODO: order_by value in database
+    assets = sorted(user.assets, key=lambda asset: asset.value, reverse=True)
+    portfolio = Portfolio(assets)
+    portfolio.calculate_asset_deltas()
+
     sectors = (
         db.session.query(
             Asset.sector,
@@ -127,183 +165,13 @@ def index(user_id=None):
             db.func.sum(Asset.pnl_today).label("pnl"),
             (100 * db.func.sum(Asset.pnl_today) / db.func.sum(Asset.value)).label("change"),
             db.func.sum(Asset.target).label("target"),
+            Asset.wallet_id
         )   
         .filter(Asset.user_id == user_id)
         .group_by(Asset.sector)
         .order_by(db.func.sum(Asset.value).desc())
         .all()
     )
-
-    select_sector = request.args.get('sector')
-    if select_sector:
-        assets = (
-            Asset.query.filter(Asset.user_id == user_id).filter(Asset.sector == select_sector).order_by(Asset.value.desc()).all()
-        )
-    else:
-        assets = (
-            Asset.query.filter(Asset.user_id == user_id).order_by(Asset.value.desc()).all()
-        )
-
-    #if select_sector:
-    #    return select_sector
-    #else:
-    #    return "nada"
-
-
-    if assets:
-        # portfolio stats
-        if select_sector:
-            value = (
-                db.session.query(db.func.sum(Asset.value).label("value"))
-                .filter(Asset.user_id == user_id)
-                .filter(Asset.sector == select_sector)
-                .first()
-                .value
-            )
-        else:
-            value = (
-                db.session.query(db.func.sum(Asset.value).label("value"))
-                .filter(Asset.user_id == user_id)
-                .first()
-                .value
-            )
-
-        pnl_today = 0
-        unrealized_pnl = 0
-        total_percentage = 0
-        total_target = 0
-        for asset in assets:
-            pnl_today += asset.pnl_today
-            unrealized_pnl += asset.unrealized_pnl
-            total_percentage += asset.percentage
-            total_target += asset.target
-        change = 100 * ((value + pnl_today) / value - 1)
-        portfolio = {
-            "pnl_today": pnl_today,
-            "value": value,
-            "change": change,
-            "unrealized_pnl": unrealized_pnl,
-            "total_percentage": total_percentage,
-            "total_target": total_target,
-        }
-    else:
-        portfolio = None
-
-    # performance stats
-    stats = (
-        Performance.query.filter(Performance.user_id == user_id)
-        .filter(extract("year", Performance.created_at) == 2024)
-        .group_by(
-            extract("year", Performance.created_at),
-            extract("month", Performance.created_at),
-            extract("day", Performance.created_at),
-        )
-        .order_by(Performance.created_at.asc())
-        .all()
-    )
-
-    # Add current value
-    performance_now = Performance(user_id=user_id, value=portfolio["value"], pnl=portfolio["pnl_today"], change=portfolio["change"], created_at=datetime.utcnow())
-    stats.append(performance_now)
-
-
-    # max drawdown
-    vals = [s.value for s in stats]
-    i = np.argmax(np.maximum.accumulate(vals) - vals) # end of the period
-    j = np.argmax(vals[:i]) # start of period
-    drawdown = {
-        "start": stats[j].created_at,
-        "end": stats[i].created_at,
-        "start_value": stats[j].value,
-        "end_value": stats[i].value,
-        "per": (stats[i].value - stats[j].value) / stats[j].value ,
-    }
-
-
-    # portfolio from all time highs
-    ath_portfolio = max(vals)
-    ath_down_value = portfolio["value"] - ath_portfolio
-    ath_down_per = ath_down_value/ath_portfolio
-    ath = {
-        "value": ath_portfolio,
-        "down": ath_down_value,
-        "per": ath_down_per
-    }
-    
-    
-
-    # calculate win/loss day ratio
-    win_days = 0
-    lose_days = 0
-    win_total = 0
-    lose_total = 0
-
-    win_max = 0
-    lose_max = 0
-
-    for day in stats:
-        if day.pnl > 0:
-            win_days+=1
-            win_total+=day.pnl
-            if day.pnl > win_max:
-                win_max = day.pnl
-        else:
-            lose_days+=1
-            lose_total+=day.pnl
-            if day.pnl < lose_max:
-                lose_max = day.pnl
-
-    win_lose_stats = {
-        "win_days": win_days,
-        "win_total": win_total,
-        "win_average": win_total / win_days,
-        "win_max": win_max,
-        "lose_days": lose_days,
-        "lose_total": lose_total,
-        "lose_average": lose_total / lose_days,
-        "lose_max": lose_max,
-    }
-           
-
-
-
-    ## calculate rolling moving average on volatility
-
-
-    for entry in stats[::-1]:  # Iterate in reverse order
-        entry.move = entry.pnl / entry.value if entry.value != 0 else 0
-
-
-    # Initialize variables for rolling average calculation
-    rolling_avg_30d = []
-    rolling_days = 30
-
-    # Calculate rolling average of move over a 30-day window
-    for i in range(len(stats) - 1, -1, -1):  # Iterate from last to first
-        rolling_sum = 0
-        rolling_count = 0
-        window_size = min(i + 1, rolling_days)  # Adjust window size dynamically
-    
-        for j in range(i, i - window_size, -1):  # Iterate backwards up to 30 days or until start of list
-            entry = stats[j]
-            rolling_sum += abs(entry.move)
-            rolling_count += 1
-
-        if rolling_count > 0:
-            rolling_avg_30d.insert(0, rolling_sum / rolling_count)
-        else:
-            rolling_avg_30d.insert(0, 0)  # Handle case where not enough data points in the window
-
-
-    # Add rolling_avg_30d to stats as a new attribute
-    for entry, avg in zip(stats, rolling_avg_30d):
-        entry.annualized_vol_30d = avg * np.sqrt(365)
-        entry.rolling_avg_30d = avg
-
-
-
-
-
 
     last_scrape = (
         Ticker.query.filter(Ticker.token != "BaseCurrency")
@@ -316,19 +184,33 @@ def index(user_id=None):
 
     return render_template(
         "index.html",
-        assets=assets,
-        sectors=sectors,
         portfolio=portfolio,
-        stats=stats,
-        drawdown=drawdown,
-        ath=ath,
-        win_lose_stats=win_lose_stats,
+        sectors=sectors,
+        wallets=wallets,
+        stats=portfolio.history,
         last_scrape=last_scrape,
         realized=False,
         user_agent=user_agent,
-        select_sector=select_sector
     )
 
+
+@app.route("/chart", methods=["GET"])
+@login_required
+def chart():
+    user_id = session.get("user")
+    user = User.query.get(user_id)
+
+    # TODO: order_by value in database
+    assets = sorted(user.assets, key=lambda asset: asset.value, reverse=True)
+
+    portfolio = Portfolio(assets)
+
+    return render_template(
+        "chart.html",
+        user=user,
+        portfolio=portfolio,
+        stats=portfolio.history
+    )
 
 @app.route("/ticker", methods=["GET", "POST"])
 @login_required

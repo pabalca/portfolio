@@ -1,20 +1,16 @@
 {% extends 'base.html' %}
 
 {% block menu %}
-  {% for item in sectors %}
+  {% for wallet in user.wallets %}
   <li class="nav-item active">
-    <a class="nav-link" href="/{{ item.sector }}">{{ item.sector }}</a>
+    <a class="nav-link" href="/wallet/{{ wallet.id }}">{{ wallet.name }}</a>
   </li>
    {% endfor %}
-
 {% endblock %}
 
 {% block content %}
 
-<h1>SECTOR</h1>
-
 {% if assets %}
-
 
   <div class="row col-auto justify-content-center">
     <div class="table-responsive-sm">
@@ -48,28 +44,19 @@
               {% set color = 'table-danger' %}
             {% endif %}
 
-
-            {% if item.sector == "crypto" %}
-              <td class="text-right {{color}}">{{ '{0:0.2f}'.format(item.shares) }}</td>
-            {% else %}
-              <td class="text-right {{color}}">{{ '{0:0.0f}'.format(item.shares) }}</td>
-            {% endif %}
-            <td class="text-right {{color}}">{{ '{:,.2f}'.format(item.ticker.price) }}</td>
-            <td class="text-right {{color}}">{{ '{:,.2f}'.format(item.ticker.price_change) }}</td>
-            <td class="text-right {{color}}">{{ '{:,.0f}'.format(item.pnl_today) }}</td>
-            <td class="text-right table-info">{{ '{:,.0f}'.format(item.value)}}</td>
-            <td class="text-right">{{ '{:,.2f}'.format(100*item.percentage)}}</td>
-            <td class="text-right">{{ '{:,.2f}'.format(item.target)}}</td>
-            <td class="text-right">{{ '{:,.0f}'.format(item.target*item.value/(100*item.percentage)-item.value )}}</td>
-            {% if item.sector == "crypto" %}
-              <td class="text-right">{{ '{:,.2f}'.format((item.target*item.value/(100*item.percentage)-item.value)/(item.value/item.shares))}}</td>
-            {% else %}
-              <td class="text-right">{{ '{:,.0f}'.format((item.target*item.value/(100*item.percentage)-item.value)/(item.value/item.shares))}}</td>
-            {% endif %}
-            <td class="text-right">{{ '{:,.0f}'.format(item.target*item.value/(100*item.percentage))}}</td>
-            <td class="text-right">{{ '{:,.2f}'.format(item.buy_price)}}</td>
-            <td class="text-right">{{ '{:,.2f}'.format(100*item.unrealized_percentage)}}</td>
-            <td class="text-right">{{ '{:,.2f}'.format(item.unrealized_pnl)}}</td>
+            <td class="text-right {{color}}">{{ item.shares | format_int }}</td>
+            <td class="text-right {{color}}">{{ item.ticker.price | format_decimal }}</td>
+            <td class="text-right {{color}}">{{ item.ticker.price_change | format_decimal }}</td>
+            <td class="text-right {{color}}">{{ item.pnl_today | format_int }}</td>
+            <td class="text-right table-info">{{ item.value | format_int }}</td>
+            <td class="text-right">{{ item.percentage | format_decimal }}</td>
+            <td class="text-right">{{ item.target | format_decimal }}</td>
+            <td class="text-right">{{ item.delta_value | format_int}}</td>
+            <td class="text-right">{{ item.delta_value_shares | format_decimal }}</td>
+            <td class="text-right">{{ item.final_value | format_int}}</td>
+            <td class="text-right">{{ item.buy_price | format_decimal}}</td>
+            <td class="text-right">{{ (100*item.unrealized_percentage) | format_int}}</td>
+            <td class="text-right">{{ item.unrealized_pnl | format_int }}</td>
           </tr>
           {% endfor %}
           <tr>
@@ -82,12 +69,12 @@
             <th scope="row" class="table-info">TOTAL</th>
             <td class="text-right"></td>
             <td class="text-right"></td>
-            <td class="text-right {{color}} font-weight-bold">{{ '{:,.2f}'.format(portfolio["change"])  }}</td>
-            <td class="text-right {{color}} font-weight-bold">{{ '{:,.0f}'.format(portfolio["pnl_today"])  }}</td>
-            <td class="text-right table-info font-weight-bold">{{ '{:,.0f}'.format(portfolio["value"])  }}</td>
-            <td class="text-right">total_percentage</td>
-            <td class="text-right">{{portfolio.total_target}}</td>
-            <td class="text-right font-weight-bold">blaba</td>
+            <td class="text-right {{color}} font-weight-bold">{{ portfolio.change | format_decimal  }}</td>
+            <td class="text-right {{color}} font-weight-bold">{{ portfolio.pnl_today | format_int }}</td>
+            <td class="text-right table-info font-weight-bold">{{ portfolio.value | format_int  }}</td>
+            <td class="text-right"></td>
+            <td class="text-right">{{portfolio.total_target | format_decimal}}</td>
+            <td class="text-right font-weight-bold"></td>
             <td class="text-right"></td>
             <td class="text-right"></td>
             <td class="text-right"></td>
@@ -110,6 +97,12 @@
   </div>
 
   <hr>
+
+  <div class="row d-flex justify-content-center">
+    <div class="col-auto">
+      <canvas id="assetsChart" width="400" height="400"></canvas>
+    </div>
+  </div>
 
 {% else %}
 <p>There are still no assets in your portfolio.</p>

@@ -18,9 +18,9 @@
         <tbody>
           {% for sector in sectors %}
           <tr>
-            <th scope="row"><a href="/?sector={{ sector.sector }}">{{ sector.sector }}</a></th>
+            <th scope="row"><a href="/wallet/{{ sector.wallet_id }}">{{ sector.sector }}</a></th>
             <th class="table-info" scope="row">{{ '{:,.0f}'.format(sector.value) }}</th>
-            <th scope="row">{{ '{:,.1f}'.format(100* sector.value / portfolio["value"]) }}</th>
+            <th scope="row">{{ '{:,.1f}'.format(100* sector.value / portfolio.value) }}</th>
             {% if sector.pnl >= 0 %}
               {% set color = 'table-success' %}
             {% else %}
@@ -29,22 +29,22 @@
             <th class="{{color}}" scope="row">{{ '{:,.0f}'.format(sector.pnl) }}</th>
             <th class="{{color}}" scope="row">{{ '{:,.2f}'.format(sector.change) }}</th>
             <th scope="row">{{ '{:,.0f}'.format(sector.target) }}</th>
-            <th scope="row">{{ '{:,.0f}'.format(portfolio["value"] * sector.target / 100 - sector.value) }}</th>
+            <th scope="row">{{ '{:,.0f}'.format(portfolio.value * sector.target / 100 - sector.value) }}</th>
           </tr>
           {% endfor %}
 
           <!-- TOTAL PORTFOLIO -->
           <tr>
-            <th scope="row">TOTAL</th>
-            <th class="table-info" scope="row">{{ '{:,.0f}'.format(portfolio["value"]) }}</th>
-            <th scope="row">{{ '{:,.0f}'.format(100*portfolio["total_percentage"]) }}</th>
+            <th scope="row"><a href="/total">TOTAL</a></th>
+            <th class="table-info" scope="row">{{ '{:,.0f}'.format(portfolio.value) }}</th>
+            <th scope="row">{{ '{:,.0f}'.format(100*portfolio.total_target) }}</th>
             {% if portfolio["pnl_today"] >= 0 %}
               {% set color = 'table-success' %}
             {% else %}
               {% set color = 'table-danger' %}
             {% endif %}
-            <th class="{{color}}" scope="row">{{ '{:,.0f}'.format(portfolio["pnl_today"]) }}</th>
-            <th class="{{color}}" scope="row">{{ '{:,.2f}'.format(portfolio["change"]) }}</th>
+            <th class="{{color}}" scope="row">{{ '{:,.0f}'.format(portfolio.pnl_today) }}</th>
+            <th class="{{color}}" scope="row">{{ '{:,.2f}'.format(portfolio.change) }}</th>
             <th scope="row"></th>
             <th scope="row"></th>
           </tr>
@@ -55,5 +55,4 @@
 
   </div>
   </div>
-  <hr>
 

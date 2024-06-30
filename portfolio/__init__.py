@@ -22,7 +22,7 @@ from portfolio.models import db
 from flask_migrate import Migrate
 
 db.init_app(app)
-migrate = Migrate(app, db)
+migrate = Migrate(app, db, render_as_batch=True)
 
 import portfolio.handlers
 import portfolio.views

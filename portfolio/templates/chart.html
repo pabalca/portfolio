@@ -1,0 +1,319 @@
+{% extends 'base.html' %}
+
+{% block menu %}
+  {% for wallet in wallets %}
+  <li class="nav-item active">
+    <a class="nav-link" href="/wallet/{{ wallet.id }}">{{ wallet.name }}</a>
+  </li>
+   {% endfor %}
+{% endblock %}
+
+{% block content %}
+
+  <div class="row d-flex justify-content-center">
+    <div class="col-10">
+      <canvas id="statsChart" width="700" height="500"></canvas>
+    </div>
+  </div>
+
+{{ portfolio.history[0].vol_30d }}
+
+
+{% endblock %}
+
+{% block scripts %}
+
+const ctx = document.getElementById('statsChart');
+
+new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: [
+      {% for item in stats %}
+          "{{item.created_at.strftime("%m/%d/%Y")}}",
+      {% endfor %}
+    ],
+    datasets: [
+      {
+        label: 'Value: ',
+        data: [
+          {% for item in stats %}
+              "{{ item.value }}",
+          {% endfor %}
+        ],
+        backgroundColor: 'rgb(60, 60, 255, 0.8)',
+        borderWidth: 3,
+        fill: false,
+        yAxisID: 'y-axis-1',
+        pointRadius: 1,
+        borderColor : [
+          {% for item in stats %}
+              {% if loop.last %}
+                  'orange', // Color for the last point
+              {% else %}
+                  'blue', // Color for other points
+              {% endif %}
+          {% endfor %}
+        ],
+      },
+      {
+        label: 'PNL',
+        data: [
+          {% for item in stats %}
+              "{{'{0:0.0f}'.format(item.pnl)}}",
+          {% endfor %}
+        ],
+        type: 'bar',
+        backgroundColor: function(context) {
+          var value = context.dataset.data[context.dataIndex];
+          var color = value >= 0 ? 'rgba(0, 255, 0, 0.25)' : 'rgba(255, 0, 0, 0.25)';
+          return color;
+        },
+        fill: false,
+        yAxisID: 'y-axis-2',
+      },
+      {
+        label: 'vol 7d',
+        data: [
+          {% for item in stats %}
+              "{{ item.vol_7d }}",
+          {% endfor %}
+        ],
+        type: 'line',
+        pointRadius: 0,
+        backgroundColor: 'orange',
+        borderColor: 'orange',
+        borderWidth: 1,
+        fill: false,
+        yAxisID: 'y-axis-3',
+      },
+      {
+        label: 'vol 30d',
+        data: [
+          {% for item in stats %}
+              "{{ item.vol_30d }}",
+          {% endfor %}
+        ],
+        type: 'line',
+        pointRadius: 0,
+        backgroundColor: 'red',
+        borderColor: 'red',
+        borderWidth: 1,
+        fill: false,
+        yAxisID: 'y-axis-3',
+      },
+      {
+        label: 'vol 90d',
+        data: [
+          {% for item in stats %}
+              "{{ item.vol_90d }}",
+          {% endfor %}
+        ],
+        type: 'line',
+        pointRadius: 0,
+        backgroundColor: 'purple',
+        borderColor: 'purple',
+        borderWidth: 1,
+        fill: false,
+        yAxisID: 'y-axis-3',
+      },
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: {
+        display: true,
+        position: 'bottom',
+      },
+      title: {
+        display: true,
+        text: 'Performance'
+      },
+      tooltip: {
+        enabled: true,
+      },
+    },
+    scales: {
+      'y-axis-1': {
+        type: 'linear',
+        display: true,
+        position: 'right',
+        grid: {
+          drawOnChartArea: true,
+        },
+      },
+      'y-axis-2': {
+        type: 'linear',
+        display: true,
+        position: 'left',
+        grid: {
+          drawOnChartArea: false,
+        },
+      },
+      'y-axis-3': {
+        type: 'linear',
+        display: true,
+        position: 'right',
+        grid: {
+          drawOnChartArea: false,
+        },
+        min: -5,
+        max: 5,
+      },
+      x: {
+        type: 'category',
+        labels: [
+          {% for item in stats %}
+              "{{item.created_at.strftime("%m/%d/%Y")}}",
+          {% endfor %}
+        ],
+      }
+    }
+  }
+});
+
+
+  const ctx3 = document.getElementById('sectorsChart');
+
+  new Chart(ctx3, {
+    type: 'pie',
+    plugins: [ChartDataLabels],
+    data: {
+      labels: [
+          {% for item in sectors %}
+              "{{item.sector}}",
+          {% endfor %},
+      ],
+      datasets: [
+      {
+        label: ' value: ',
+        data: [
+            {% for item in sectors %}
+                "{{'{0:0.0f}'.format(item.value)}}",
+            {% endfor %},
+
+        ],
+        borderWidth: 1,
+        // cutout: '10%',
+      },
+      ]
+    },
+    options: {
+      responsive: true,
+      animation: {
+        //duration: 0
+      },
+      plugins: {
+        legend: {
+          position: 'right',
+        },
+        title: {
+          display: true,
+          text: 'Sectors',
+          align: 'start'
+        },
+        tooltip: {
+          enabled: true,
+        },
+        datalabels: {
+           formatter: function(value, context) {
+             var hiddens = context.chart._hiddenIndices;
+             var total = 0;
+             var datapoints = context.dataset.data;
+             datapoints.forEach((val, i) => {
+               if (hiddens[i] != undefined) {
+                 if (!hiddens[i]) {
+                   total += parseInt(val);
+                 }
+               } else {
+                 total += parseInt(val);
+               }
+             });
+
+             var percentage = (value / total * 100).toFixed(0) + "%";
+             if (percentage != "NaN%") { // weird bug
+               return percentage
+             }
+          },
+          color: '#000',
+          display: 'auto',
+          anchor: 'center',
+          align: 'center',
+        }
+      }
+    }
+  });
+
+  const ctx4 = document.getElementById('sectorsTargetChart');
+
+  new Chart(ctx4, {
+    type: 'pie',
+    plugins: [ChartDataLabels],
+    data: {
+      labels: [
+          {% for item in sectors %}
+              "{{item.sector}}",
+          {% endfor %},
+      ],
+      datasets: [
+      {
+        label: ' value: ',
+        data: [
+            {% for item in sectors %}
+                "{{'{0:0.0f}'.format(item.target)}}",
+            {% endfor %},
+
+        ],
+        borderWidth: 1,
+        // cutout: '60%',
+      },
+      ]
+    },
+    options: {
+      responsive: true,
+      animation: {
+        //duration: 0
+      },
+      plugins: {
+        legend: {
+          position: 'right',
+        },
+        title: {
+          display: true,
+          text: 'Target',
+          align: 'start'
+        },
+        tooltip: {
+          enabled: false,
+        },
+        datalabels: {
+           formatter: function(value, context) {
+             var hiddens = context.chart._hiddenIndices;
+             var total = 0;
+             var datapoints = context.dataset.data;
+             datapoints.forEach((val, i) => {
+               if (hiddens[i] != undefined) {
+                 if (!hiddens[i]) {
+                   total += parseInt(val);
+                 }
+               } else {
+                 total += parseInt(val);
+               }
+             });
+
+             var percentage = (value / total * 100).toFixed(0) + "%";
+             if (percentage != "NaN%") { // weird bug
+               return percentage
+             }
+          },
+          color: '#000',
+          display: 'auto',
+          anchor: 'center',
+          align: 'center',
+        }
+      }
+    }
+  });
+
+{% endblock %}
