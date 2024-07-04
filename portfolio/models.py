@@ -243,6 +243,14 @@ class Portfolio:
         self._history_cache = None
 
     @property
+    def wallet_name(self):
+        return self.assets[0].wallet.name
+
+    @property
+    def wallet_id(self):
+        return self.assets[0].wallet_id
+
+    @property
     def value(self):
         return sum(asset.value for asset in self.assets)
 

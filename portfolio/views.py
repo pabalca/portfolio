@@ -159,25 +159,32 @@ def index(user_id=None):
     user = User.query.get(user_id)
     wallets = user.wallets
 
-    # TODO: order_by value in database
-    assets = sorted(user.assets, key=lambda asset: asset.value, reverse=True)
-    portfolio = Portfolio(assets)
-    portfolio.calculate_asset_deltas()
+    portfolio = Portfolio(user.assets)
+    sectors = []
+    for w in wallets:
+        ass = w.assets
+        sectors.append(Portfolio(w.assets))
 
-    sectors = (
-        db.session.query(
-            Asset.sector,
-            db.func.sum(Asset.value).label("value"),
-            db.func.sum(Asset.pnl_today).label("pnl"),
-            (100 * db.func.sum(Asset.pnl_today) / db.func.sum(Asset.value)).label("change"),
-            db.func.sum(Asset.target).label("target"),
-            Asset.wallet_id
-        )   
-        .filter(Asset.user_id == user_id)
-        .group_by(Asset.wallet_id)
-        .order_by(db.func.sum(Asset.value).desc())
-        .all()
-    )
+
+    # TODO: order_by value in database
+    # assets = sorted(user.assets, key=lambda asset: asset.value, reverse=True)
+    # portfolio = Portfolio(assets)
+    # portfolio.calculate_asset_deltas()
+
+    # sectors = (
+    #    db.session.query(
+    #        Asset.sector,
+    #        db.func.sum(Asset.value).label("value"),
+    #        db.func.sum(Asset.pnl_today).label("pnl"),
+    #        (100 * db.func.sum(Asset.pnl_today) / db.func.sum(Asset.value)).label("change"),
+    #        db.func.sum(Asset.target).label("target"),
+    #        Asset.wallet_id
+    #    )
+    #    .filter(Asset.user_id == user_id)
+    #    .group_by(Asset.wallet_id)
+    #    .order_by(db.func.sum(Asset.value).desc())
+    #    .all()
+    #)
 
     last_scrape = (
         Ticker.query.filter(Ticker.token != "BaseCurrency")
