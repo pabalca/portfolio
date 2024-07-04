@@ -83,7 +83,7 @@
           {% else %}
             {% set color = 'table-danger' %}
           {% endif %}
-            <td class="text-right {{color}} font-weight-bold">{{ '{:,.2f}'.format(100* portfolio["unrealized_pnl"] / portfolio.value)  }}</td>
+            <td class="text-right {{color}} font-weight-bold">{{ '{:,.2f}'.format( 100* (-1+ portfolio.value / (portfolio.value - portfolio["unrealized_pnl"])))  }}</td>
             <td class="text-right {{color}} font-weight-bold">{{ '{:,.2f}'.format(portfolio["unrealized_pnl"])  }}</td>
           </tr>
         </tbody>
