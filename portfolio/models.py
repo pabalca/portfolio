@@ -107,7 +107,6 @@ class Asset(db.Model):
     buy_price = db.Column(db.Float)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-
     user = db.relationship('User', backref='assets')
 
 
@@ -167,16 +166,16 @@ class Asset(db.Model):
         return cls.value * (1 - 1 / (1 + unr_per))
 
 
-    @property
-    def percentage(self):
-        total = (
-            db.session.query(Asset.user_id, db.func.sum(Asset.value).label("total"))
-            .filter(Asset.user_id == self.user_id)
-            .filter(Asset.sector == self.sector) # filter by sector, portfolio of portfolios
-            .first()
-            .total
-        )
-        return 100 * self.value / total
+    #@property
+    #def percentage(self):
+    #    total = (
+    #        db.session.query(Asset.user_id, db.func.sum(Asset.value).label("total"))
+    #        .filter(Asset.user_id == self.user_id)
+    #        .filter(Asset.wallet_id == self.wallet_id) # filter by sector, portfolio of portfolios
+    #        .first()
+    #        .total
+    #    )
+    #    return 100 * self.value / total
 
     @property
     def pnl(self):
@@ -186,6 +185,9 @@ class Asset(db.Model):
         self.delta_value = self.target / 100 * portfolio_value - self.value
         self.delta_value_shares = self.delta_value / (self.value / self.shares)
         self.final_value = self.target / 100 * portfolio_value
+
+    def calculate_percentage(self, portfolio_value):
+        self.percentage = 100 * self.value / portfolio_value
 
 
 # portfolio stats over time
@@ -266,6 +268,12 @@ class Portfolio:
         for asset in self.assets:
             asset.calculate_deltas(portfolio_value)
 
+    def calculate_percentage(self, normalize_target=False):
+        for asset in self.assets:
+            asset.percentage = 100 * asset.value / self.value
+            if normalize_target:
+                asset.target = asset.target * asset.wallet.target / 100
+
     @property
     def history(self):
         if self._history_cache is None:
@@ -312,6 +320,20 @@ class Portfolio:
             self._history_cache = stats
         return self._history_cache
 
+
+    @property
+    def ath(self):
+        stats = self.history
+        ath_portfolio = max([stat.value for stat in stats])
+        ath_down_value = (self.value - ath_portfolio)
+        ath_down_change = 100*ath_down_value/ath_portfolio
+        return {
+            "value": ath_portfolio,
+            "change": ath_down_change,
+            "distance": ath_down_value,
+        }
+
+
     @property
     def ytd(self):
         stats = self.history
@@ -345,18 +367,6 @@ class Portfolio:
                 "value": self.value - stats[-91].value,
                 "change": 100 * (self.value - stats[-91].value) / stats[-91].value
             }
-        }
-
-    @property
-    def ath(self):
-        stats = self.history
-        ath_portfolio = max([stat.value for stat in stats])
-        ath_down_value = (self.value - ath_portfolio)
-        ath_down_change = 100*ath_down_value/ath_portfolio
-        return {
-            "value": ath_portfolio,
-            "change": ath_down_change,
-            "distance": ath_down_value,
         }
 
     @property

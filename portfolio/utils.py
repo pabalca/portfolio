@@ -6,35 +6,40 @@ from concurrent.futures import ThreadPoolExecutor
 
 from portfolio.models import Ticker, Asset, Performance, Snapshot, db
 
+import logging
 
-def update_ticker(ticker):
-    if ticker.token == "BaseCurrency":
-        # click.echo("skip base currency")
-        return
+logging.basicConfig(level=logging.INFO)
 
-    yticker = yf.Ticker(ticker.token).fast_info
-    market_price = yticker['last_price']
-    previous_close_price = yticker['previous_close']
 
-    ticker.price = market_price
-    ticker.previous_close_price = previous_close_price
-    ticker.created_at = datetime.utcnow()
+def update_tickers(ticker):
+    try:
 
-    # click.echo(f"{ticker.description} = {ticker.price} updated")
+        yticker = yf.Ticker(ticker.token).fast_info
+        market_price = yticker['last_price']
+        previous_close_price = yticker['previous_close']
 
-# Function to update prices using multithreading
+        ticker.price = market_price
+        ticker.previous_close_price = previous_close_price
+        ticker.created_at = datetime.utcnow()
+
+    except Exception as exc:
+        logging.error(f"Failed to update tickers: {exc}")
+
+
 def update_prices():
     tickers = Ticker.query.filter(Ticker.token != "BaseCurrency").all()
+    # ticker_tokens = [ticker.token for ticker in tickers]
 
-    with ThreadPoolExecutor(max_workers=10) as executor:  # Adjust max_workers as needed
-        futures = [executor.submit(update_ticker, ticker) for ticker in tickers]
+    # ticker_chunks = [tickers[i:i + 100] for i in range(0, len(tickers), 3)]  # Adjust chunk size as needed
+
+    with ThreadPoolExecutor(max_workers=5) as executor:  # Adjust max_workers as needed
+        futures = [executor.submit(update_tickers, ticker) for ticker in tickers]
 
         for future in futures:
             try:
-                future.result()  # Wait for completion and handle exceptions if any
+                future.result()
             except Exception as exc:
-                # click.echo(f"Exception occurred: {exc}")
-                pass
+                logging.error(f"Exception occurred: {exc}")
 
     db.session.commit()
 

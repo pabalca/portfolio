@@ -18,6 +18,8 @@ app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
 app.config['DEBUG'] = True
 
+# app.jinja_env.cache = {}
+
 from portfolio.models import db
 from flask_migrate import Migrate
 

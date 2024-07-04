@@ -82,7 +82,8 @@ def scrape():
 
         yticker = yf.Ticker(ticker.token).fast_info
         market_price = yticker["last_price"]
-        previous_close_price = yticker["previous_close"]
+        # previous_close_price = yticker["previous_close"]
+        previous_close_price = yticker["open"]
 
         ticker.price = market_price
         ticker.previous_close_price = previous_close_price

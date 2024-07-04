@@ -39,6 +39,10 @@ app.jinja_env.filters['format_decimal'] = format_decimal
 app.jinja_env.filters['format_int'] = format_int
 
 
+@app.route("/mobile", methods=["GET", "POST"])
+def mobile():
+    return render_template("mobile.html", wallet_name="wallet_name")
+
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -89,6 +93,7 @@ def wallet(wallet_id=None):
 
     portfolio = Portfolio(assets)
     portfolio.calculate_asset_deltas()
+    portfolio.calculate_percentage()
 
     last_scrape = (
         Ticker.query.filter(Ticker.token != "BaseCurrency")
@@ -116,6 +121,7 @@ def total():
 
     portfolio = Portfolio(assets)
     portfolio.calculate_asset_deltas()
+    portfolio.calculate_percentage(normalize_target=True)
 
     last_scrape = (
         Ticker.query.filter(Ticker.token != "BaseCurrency")
@@ -256,24 +262,29 @@ def asset():
         if ticker.id not in assets_ticker_ids
     ]
 
+    user_id = session.get("user")
+    user = User.query.get(user_id)
+    wallets = user.wallets
+    form.wallet.choices = [(w.id, w.name) for w in wallets]
+
     if form.validate_on_submit():
         ticker = form.ticker.data
         shares = form.shares.data
-        sector = form.sector.data
+        wal = form.wallet.data
         target = form.target.data
         buy_price = form.buy_price.data
         a = Asset(
             user_id=session.get("user"),
             ticker_id=ticker,
             shares=shares,
-            sector=sector,
+            wallet_id=wal,
             target=target,
             buy_price=buy_price,
         )
         db.session.add(a)
         db.session.commit()
         flash(f"Your asset <{ticker} is saved.")
-        return redirect(url_for("asset"))
+        return redirect(url_for("wallet", wallet_id=a.wallet_id))
 
     return render_template("asset.html", assets=assets.all(), form=form)
 
@@ -293,9 +304,15 @@ def edit_asset(asset_id):
     form = AssetForm(sector=asset.sector)
     form.ticker.choices = [asset.ticker.description]
 
+    priority_wallet = asset.wallet_id
+    wallets = asset.user.wallets
+    sorted_wallets = sorted(wallets, key=lambda x: (x.id != priority_wallet, x.id))
+    form.wallet.choices = [(w.id, w.name) for w in sorted_wallets]
+
     if form.validate_on_submit():
         asset.shares = form.shares.data
-        asset.sector = form.sector.data
+        # asset.sector = form.sector.data
+        asset.wallet_id = form.wallet.data
         asset.target = form.target.data
         asset.buy_price = form.buy_price.data
         asset.ticker.price = form.ticker_price.data
@@ -303,7 +320,9 @@ def edit_asset(asset_id):
         flash(
             f"Your asset <{asset.ticker.description} is updated with shares {asset.shares}"
         )
-        return redirect(url_for("index"))
+        return redirect(url_for("wallet", wallet_id=asset.wallet_id))
+        # return redirect(url_for("index"))
+
     form.shares.data = asset.shares
     form.target.data = asset.target
     form.buy_price.data = asset.buy_price
@@ -328,7 +347,7 @@ def delete_asset(asset_id):
     db.session.delete(asset)
     db.session.commit()
     flash(f"Your asset <{asset_name}> is deleted.")
-    return redirect(url_for("asset"))
+    return redirect(url_for("wallet", wallet_id=asset.wallet_id))
 
 
 @app.route("/scrape", methods=["GET"])

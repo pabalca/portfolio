@@ -36,11 +36,7 @@ class AssetForm(FlaskForm):
         validators=[DataRequired()],
         #choices=[ (x,f"{x}%") for x in range(1,101)],
     )
-    sector = SelectField(
-        "Sector",
-        validators=[DataRequired()],
-        choices=[("stocks", "stocks"),("index", "index"), ("crypto", "crypto"), ("cash", "cash"), ("home", "home")],
-    )
+    wallet = SelectField("Wallet", validators=[DataRequired()])
     submit = SubmitField("Create")
 
 
