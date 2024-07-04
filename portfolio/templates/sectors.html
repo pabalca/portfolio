@@ -11,7 +11,7 @@
             <th scope="col" class="text-center table-secondary">%</th>
             <th scope="col" class="text-center table-secondary">PNL</th>
             <th scope="col" class="text-center table-secondary">Today</th>
-            <th scope="col" class="text-center table-secondary">Target</th>
+            <th scope="col" class="text-center table-secondary">Alloc.</th>
             <th scope="col" class="text-center table-secondary">&Delta;&euro;</th>
          </tr>
         </thead>
@@ -37,7 +37,7 @@
           <tr>
             <th scope="row"><a href="/total">TOTAL</a></th>
             <th class="table-info" scope="row">{{ '{:,.0f}'.format(portfolio.value) }}</th>
-            <th scope="row">{{ '{:,.0f}'.format(100*portfolio.total_target) }}</th>
+            <th scope="row">{{ '{:,.0f}'.format(portfolio.total_target) }}</th>
             {% if portfolio["pnl_today"] >= 0 %}
               {% set color = 'table-success' %}
             {% else %}

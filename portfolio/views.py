@@ -174,7 +174,7 @@ def index(user_id=None):
             Asset.wallet_id
         )   
         .filter(Asset.user_id == user_id)
-        .group_by(Asset.sector)
+        .group_by(Asset.wallet_id)
         .order_by(db.func.sum(Asset.value).desc())
         .all()
     )

@@ -38,7 +38,7 @@ new Chart(ctx, {
         label: 'Value: ',
         data: [
           {% for item in stats %}
-              "{{ item.value }}",
+              "{{ '{0:0.0f}'.format(item.value) }}",
           {% endfor %}
         ],
         backgroundColor: 'rgb(60, 60, 255, 0.8)',

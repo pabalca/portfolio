@@ -31,15 +31,6 @@
         <ul class="navbar-nav mr-auto">
             {% block menu %}
             
-            <li class="nav-item active">
-                <a class="nav-link" href="{{ url_for('asset') }}">assets</a>
-            </li>
-            <li class="nav-item active">
-                <a class="nav-link" href="{{ url_for('ticker') }}">symbols</a>
-            </li>
-            <li class="nav-item active">
-                <a class="nav-link" href="{{ url_for('telegram_alert') }}">alerts</a>
-            </li>
             {% endblock %}
         </ul>
         <small><a title="{{ session.get('user')}}" href="{{ url_for('logout') }}">( logout )</a></small>

@@ -44,7 +44,7 @@
               {% set color = 'table-danger' %}
             {% endif %}
 
-            <td class="text-right {{color}}">{{ item.shares | format_int }}</td>
+            <td class="text-right {{color}}">{{ item.shares | format_decimal }}</td>
             <td class="text-right {{color}}">{{ item.ticker.price | format_decimal }}</td>
             <td class="text-right {{color}}">{{ item.ticker.price_change | format_decimal }}</td>
             <td class="text-right {{color}}">{{ item.pnl_today | format_int }}</td>
